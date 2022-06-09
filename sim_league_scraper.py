@@ -49,8 +49,13 @@ client = discord.Client()
 
 @client.event
 async def on_message(message):
+    print("retrieving pbe tasks...")
     get_pbe_tasks()
+
+    print("retrieving wsbl tasks...")
     get_wsbl_tasks()
+
+    print("scraping wsbl players...")
     get_wsbl_players()
 
 
