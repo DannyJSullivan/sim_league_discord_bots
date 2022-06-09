@@ -8,6 +8,7 @@ import pymongo
 from bson import ObjectId
 import re
 from unidecode import unidecode
+import datetime
 
 from oauth2client.service_account import ServiceAccountCredentials
 import gspread
@@ -349,6 +350,63 @@ def parse_player_list(url, team):
             print(e)
 
     return player_results
+
+
+class Player:
+    url: ""
+    user_url: ""
+    last_updated: ""
+    forum_name: ""
+    index_name: ""
+    standard_name: ""
+    discord: ""
+    season: ""
+    first_name: ""
+    last_name: ""
+    name: ""
+    position: ""
+    college: ""
+    age: 0
+    handedness: ""
+    recruited_by: ""
+    jersey_num: 0
+    height: ""
+    weight: 0
+    birthplace: ""
+    arch: ""
+
+    team: ""
+    last_updated: ""
+    tpe_total: 0
+    tpe_banked: 0
+
+    fg_ra: 0
+    fg_ip: 0
+    fg_mr: 0
+    fg_cor: 0
+    fg_ab: 0
+    ft: 0
+    scoring: 0
+    passing: 0
+    handling: 0
+    off_reb: 0
+    def_reb: 0
+    blocking: 0
+    stealing: 0
+    defender: 0
+    iq: 0
+
+    ps_pass: 0
+    ps_dap: 0
+    ps_das: 0
+    ps_pu: 0
+    ps_puj: 0
+    ps_cas: 0
+
+    fr_post: 0
+    fr_mr: 0
+    fr_cor: 0
+    fr_atb: 0
 
 
 # TODO: strip the arch just for the important stuff, no comparisons (just do if point guard in etc...)
