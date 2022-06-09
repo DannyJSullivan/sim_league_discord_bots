@@ -59,15 +59,14 @@ async def on_message(message):
     get_wsbl_players()
 
 
-# TODO: scrape PBE tasks
-def get_pbe_tasks():
-    # activity check (only get the top one)
-    ac = "https://probaseballexperience.jcink.net/index.php?showforum=77"
+def get_tasks(league, ac_link, pt_link):
+    collection = None
+    if league == "pbe":
+        collection = pbe_task_collection
+    elif league == "wsbl":
+        collection = wsbl_task_collection
 
-    # point tasks (get all forum topics except for the last one
-    pt = "https://probaseballexperience.jcink.net/index.php?showforum=56"
-
-    page_content = requests.get(ac).text
+    page_content = requests.get(ac_link).text
     soup = BeautifulSoup(page_content, "html.parser")
     table = soup.find("div", attrs={"id": "topic-list"})
     newest_topic = table.find("tr", attrs={"class": "topic-row"})
@@ -76,9 +75,9 @@ def get_pbe_tasks():
     name = str(rows[1].text).replace("\n", "").split("(")[0].strip()
 
     # update the collection by inserting new tasks and updating old
-    update_db(pbe_task_collection, get_topic_num_from_url(link), name, get_completed_forum_names_list(link))
+    update_db(collection, get_topic_num_from_url(link), name, get_completed_forum_names_list(link))
 
-    page_content = requests.get(pt).text
+    page_content = requests.get(pt_link).text
     soup = BeautifulSoup(page_content, "html.parser")
     table = soup.find("div", attrs={"id": "topic-list"})
     rows = table.findAll("tr", attrs={"class": "topic-row"})
@@ -89,8 +88,19 @@ def get_pbe_tasks():
             link = urls[1].find("a").get("href")
             name = str(urls[1].text).replace("\n", "").split("(Pages")[0].strip()
             if name != "Introduction PT":
-                update_db(pbe_task_collection, get_topic_num_from_url(link), name, get_completed_forum_names_list(link))
+                update_db(collection, get_topic_num_from_url(link), name, get_completed_forum_names_list(link))
 
+    return
+
+
+def get_pbe_tasks():
+    # activity check (only get the top one)
+    ac = "https://probaseballexperience.jcink.net/index.php?showforum=77"
+
+    # point tasks (get all forum topics except intro PT for PBE)
+    pt = "https://probaseballexperience.jcink.net/index.php?showforum=56"
+
+    get_tasks("pbe", ac, pt)
     return
 
 
@@ -148,8 +158,14 @@ def update_db(collection, topic_num, task, names):
         })
 
 
-# TODO: scrape WSBL tasks
 def get_wsbl_tasks():
+    # activity check (only get the top one)
+    ac = "https://worldsimbasketball.jcink.net/index.php?showforum=5"
+
+    # point tasks (get all forum topics except intro PT for PBE)
+    pt = "https://worldsimbasketball.jcink.net/index.php?showforum=7"
+
+    get_tasks("wsbl", ac, pt)
     return
 
 
