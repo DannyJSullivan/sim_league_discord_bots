@@ -19,6 +19,9 @@ from google.oauth2.credentials import Credentials
 import requests
 from bs4 import BeautifulSoup
 
+# TODO: When adding new imports, be sure to add them to the requirements.txt file. Run pip freeze >
+#  requirements.txt to do so.
+
 # google sheets
 scopes = [
     'https://www.googleapis.com/auth/spreadsheets',
