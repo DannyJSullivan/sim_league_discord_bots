@@ -272,7 +272,7 @@ def get_user_info(name, is_discord_name):
         # otherwise scrape it real time
         return get_user_overview(name, True)
 
-    return "Error! Could not find player. Please either claim a forum name by using !cf your_forum_name or check the " \
+    return "Error! Could not find player. Please either claim a forum name by using !claim your_forum_name or check the " \
            "spelling of the forum name or player name you supplied."
 
 
@@ -308,18 +308,18 @@ def get_user_overview(user_info, could_not_find):
         return overview
 
     else:
-        forum_name = user_info
+        forum_name = user_info['forum_name']
         player_name = handle_special_characters(find_player_from_bank(forum_name))
+        discord = user_info['discord']
         balance = lookup_bank_balance(forum_name)
         user_info = find_player_from_tpe_tracker(player_name)
 
-        balance = lookup_bank_balance(user_info['forum_name'])
-        overview += '```' + user_info['player_name'] + '\n---------------\nRegression Season: ' \
+        overview += '```' + player_name + '\n---------------\nRegression Season: ' \
                     + user_info['regression_season'] + '\nTeam: ' + user_info['team'] + '\nPosition: ' \
-                    + user_info['pos'] + '\nTPE: ' + user_info['tpe'] + '\nForum Name: ' + user_info['forum_name'] \
+                    + user_info['pos'] + '\nTPE: ' + user_info['tpe'] + '\nForum Name: ' + forum_name \
                     + '\nLast Seen: ' + user_info['last_seen'] + '\nLast Updated: ' + user_info['last_updated'] \
-                    + '\nBalance: ' + balance + "\nDiscord: " + user_info['discord']
-        overview += get_tasks(user_info['forum_name'])
+                    + '\nBalance: ' + balance + "\nDiscord: " + discord
+        overview += get_tasks(forum_name)
         return overview
 
 
