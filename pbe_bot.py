@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import pymongo
 from bson import ObjectId
 import re
+from unidecode import unidecode
 
 from oauth2client.service_account import ServiceAccountCredentials
 import gspread
@@ -77,10 +78,12 @@ async def claim_forum(ctx):
                                                            "regression_season": result.get("regression_season"),
                                                            "team": result.get("team"),
                                                            "player_name": result.get("name"),
-                                                           "tpe_tracker_link": result.get("tpe_tracker_link"),
                                                            "pos": result.get("pos"),
                                                            "tpe": result.get("tpe"),
-                                                           "last_updated": result.get("last_updated")
+                                                           "last_updated": result.get("last_updated"),
+                                                           "player_number": result.get("player_number"),
+                                                           "profile": result.get("profile"),
+                                                           "last_seen": result.get("last_seen")
                                                        }
                                                    })
             await ctx.send("Updated forum username!")
@@ -94,7 +97,10 @@ async def claim_forum(ctx):
                 "tpe_tracker_link": result.get("tpe_tracker_link"),
                 "pos": result.get("pos"),
                 "tpe": result.get("tpe"),
-                "last_updated": result.get("last_updated")
+                "last_updated": result.get("last_updated"),
+                "player_number": result.get("player_number"),
+                "profile": result.get("profile"),
+                "last_seen": result.get("last_seen")
             })
             await ctx.send("Retrieved all user information successfully!")
     else:
@@ -147,10 +153,12 @@ async def claim_player(ctx):
                                                        "regression_season": result.get("regression_season"),
                                                        "team": result.get("team"),
                                                        "player_name": result.get("name"),
-                                                       "tpe_tracker_link": result.get("tpe_tracker_link"),
                                                        "pos": result.get("pos"),
                                                        "tpe": result.get("tpe"),
-                                                       "last_updated": result.get("last_updated")
+                                                       "last_updated": result.get("last_updated"),
+                                                       "player_number": result.get("player_number"),
+                                                       "profile": result.get("profile"),
+                                                       "last_seen": result.get("last_seen")
                                                    }
                                                })
         await ctx.send("Updated player!")
@@ -163,7 +171,10 @@ async def claim_player(ctx):
             "tpe_tracker_link": result.get("tpe_tracker_link"),
             "pos": result.get("pos"),
             "tpe": result.get("tpe"),
-            "last_updated": result.get("last_updated")
+            "last_updated": result.get("last_updated"),
+            "player_number": result.get("player_number"),
+            "profile": result.get("profile"),
+            "last_seen": result.get("last_seen")
         })
         await ctx.send("Claimed player!")
 
@@ -181,8 +192,8 @@ async def user_overview(ctx):
 
 
 def find_player_from_tpe_tracker(player_name):
-    tpe_tracker_base = 'http://pbe-tpe-tracker.herokuapp.com'
     tpe_tracker = 'http://pbe-tpe-tracker.herokuapp.com/players'
+    pbe_topic_url = 'https://probaseballexperience.jcink.net/index.php?showtopic='
     page_content = requests.get(tpe_tracker).text
     soup = BeautifulSoup(page_content, "html.parser")
     table = soup.find("tbody")
@@ -203,18 +214,34 @@ def find_player_from_tpe_tracker(player_name):
         row_data = row.findAll("td")
         for data in row_data:
             try:
-                if data.text.lower() == player_name.lower():
+                test = handle_special_characters(player_name)
+                if handle_special_characters(data.text) == handle_special_characters(player_name):
                     resp.__setitem__("status", "SUCCESS")
                     resp.__setitem__("regression_season", row_data[0].text)
                     resp.__setitem__("team", row_data[1].text)
                     resp.__setitem__("name", row_data[2].text)
-                    resp.__setitem__("tpe_tracker_link", tpe_tracker_base + row_data[2].find("a").get("href"))
+                    resp.__setitem__("player_number", row_data[2].find("a").get("href").replace("/players/", ""))
                     resp.__setitem__("pos", row_data[3].text)
                     resp.__setitem__("tpe", row_data[4].text)
                     resp.__setitem__("last_updated", row_data[5].text)
-                    return resp
+                    break
             except:
                 return resp
+
+    if resp.get("status", "SUCCESS"):
+        page_content = requests.get(pbe_topic_url + resp.get("player_number")).text
+        soup = BeautifulSoup(page_content, "html.parser")
+        profile_url = soup.find("span", attrs={"class": "normalname"}).find("a").get("href")
+        resp.__setitem__("profile", profile_url)
+        page_content = requests.get(profile_url).text
+        soup = BeautifulSoup(page_content, "html.parser")
+        profile_stats = soup.find("div", attrs={"id": "profile-statistics"})
+
+        for stat in profile_stats:
+            if "Last Seen: " in stat.text:
+                resp.__setitem__("last_seen", stat.text.replace("Last Seen: ", "").strip())
+                return resp
+
 
     return resp
 
@@ -298,7 +325,8 @@ def get_user_overview(user_info, is_forum_name):
         overview += '```' + player_name + '\n---------------\nRegression Season: ' \
                     + user_info['regression_season'] + '\nTeam: ' + user_info['team'] + '\nPosition: ' \
                     + user_info['pos'] + '\nTPE: ' + user_info['tpe'] + '\nForum Name: ' + forum_name \
-                    + '\nLast Seen: TODO\nLast Updated: ' + user_info['last_updated'] + '\nBalance: ' + balance
+                    + '\nLast Seen: ' + user_info['last_seen'] + '\nLast Updated: ' + user_info['last_updated'] \
+                    + '\nBalance: ' + balance
         overview += get_tasks(forum_name)
         return overview
     else:
@@ -306,8 +334,8 @@ def get_user_overview(user_info, is_forum_name):
         overview += '```' + user_info['player_name'] + '\n---------------\nRegression Season: ' \
                     + user_info['regression_season'] + '\nTeam: ' + user_info['team'] + '\nPosition: ' \
                     + user_info['pos'] + '\nTPE: ' + user_info['tpe'] + '\nForum Name: ' + user_info['forum_name'] \
-                    + '\nLast Seen: TODO\nLast Updated: ' + user_info['last_updated'] + '\nBalance: ' + balance \
-                    + "\nDiscord: " + user_info['discord']
+                    + '\nLast Seen: ' + user_info['last_seen'] + '\nLast Updated: ' + user_info['last_updated'] \
+                    + '\nBalance: ' + balance + "\nDiscord: " + user_info['discord']
         overview += get_tasks(user_info['forum_name'])
         return overview
 
@@ -453,6 +481,23 @@ def command_has_no_argument(ctx, command):
 
 def get_topic_num_from_url(url):
     return re.split('&showtopic=', url)[1]
+
+
+def get_normalized_name(name):
+    return unidecode(name)
+
+
+def handle_special_characters(name):
+    name = name.replace("Ã¶", "ö")
+    name = name.replace("Ä", "Đ")
+    name = name.replace("Ä‘", "đ")
+    name = name.replace("Ä‡", "ć")
+    name = name.replace("\"", "")
+    name = name.replace("Ã¡", "á")
+    name = name.replace("â€™", "’")
+    name = name.replace("Å¡", "š")
+
+    return name.lower()
 
 
 # Press the green button in the gutter to run the script.

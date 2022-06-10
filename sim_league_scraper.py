@@ -63,6 +63,8 @@ async def on_message(message):
     print("scraping wsbl players...")
     get_wsbl_players()
 
+    print("done!")
+
 
 def get_tasks(league, ac_link, pt_link):
     collection = None
