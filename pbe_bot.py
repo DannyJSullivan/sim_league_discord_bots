@@ -46,10 +46,9 @@ client = discord.Client()
 
 bot = commands.Bot(command_prefix='!')
 
-
-# Claim forum username
-@bot.command(name='cf', help='Claim your forum username')
-async def claim_forum(ctx):
+# Claim user
+@bot.command(name='claim', help='Claim your forum username or player name')
+async def claim_user(ctx):
     doc_id = ""
     exists = False
     cursor = discord_collection.find({"discord": re.compile(str(ctx.message.author), re.IGNORECASE)})
@@ -59,8 +58,18 @@ async def claim_forum(ctx):
         doc_id = document.get('_id')
         break
 
-    forum_name = str(ctx.message.content).replace("!cf ", "")
-    player_name = find_player_from_bank(forum_name)
+    name = str(ctx.message.content).replace("!claim ", "").strip()
+    forum_name = None
+    player_name = find_player_from_bank(name)
+
+    # if player name is none, that means we could not find the forum name, so try and see if it's a player name
+    if player_name is None:
+        forum_name = find_player_from_bank_by_player_name(name)
+        player_name = name
+    else:
+        forum_name = name
+        player_name = find_player_from_bank(name)
+
     result = find_player_from_tpe_tracker(player_name)
 
     got_from_tpe_tracker = False
@@ -77,7 +86,7 @@ async def claim_forum(ctx):
                                                            "forum_name": forum_name,
                                                            "regression_season": result.get("regression_season"),
                                                            "team": result.get("team"),
-                                                           "player_name": result.get("name"),
+                                                           "player_name": player_name,
                                                            "pos": result.get("pos"),
                                                            "tpe": result.get("tpe"),
                                                            "last_updated": result.get("last_updated"),
@@ -93,7 +102,7 @@ async def claim_forum(ctx):
                 "forum_name": forum_name,
                 "regression_season": result.get("regression_season"),
                 "team": result.get("team"),
-                "player_name": result.get("name"),
+                "player_name": player_name,
                 "tpe_tracker_link": result.get("tpe_tracker_link"),
                 "pos": result.get("pos"),
                 "tpe": result.get("tpe"),
@@ -124,63 +133,7 @@ async def claim_forum(ctx):
                            "!cp Your Player Name")
 
 
-# Claim player
-@bot.command(name='cp', help='Claim your player name')
-async def claim_player(ctx):
-    player_name = str(ctx.message.content).replace("!cp ", "")
-
-    result = find_player_from_tpe_tracker(player_name)
-
-    if result.get("status") == "FAILURE":
-        await ctx.send("Could not find player from the TPE Tracker! If your player is new, you should be added to "
-                       "the tracker soon and all your information will be available. If your player name has "
-                       "special characters, some may not be recognized. Please claim your player name using "
-                       "!cp Your Player Name")
-
-    doc_id = ""
-    exists = False
-    cursor = discord_collection.find({"discord": re.compile(str(ctx.message.author), re.IGNORECASE)})
-    for document in cursor:
-        exists = True
-        doc_id = document.get('_id')
-        break
-
-    if exists:
-        discord_collection.find_one_and_update({"_id": ObjectId(doc_id)},
-                                               {
-                                                   "$set": {
-                                                       "discord": str(ctx.message.author),
-                                                       "regression_season": result.get("regression_season"),
-                                                       "team": result.get("team"),
-                                                       "player_name": result.get("name"),
-                                                       "pos": result.get("pos"),
-                                                       "tpe": result.get("tpe"),
-                                                       "last_updated": result.get("last_updated"),
-                                                       "player_number": result.get("player_number"),
-                                                       "profile": result.get("profile"),
-                                                       "last_seen": result.get("last_seen")
-                                                   }
-                                               })
-        await ctx.send("Updated player!")
-    else:
-        discord_collection.insert_one({
-            "discord": str(ctx.message.author),
-            "regression_season": result.get("regression_season"),
-            "team": result.get("team"),
-            "player_name": result.get("name"),
-            "tpe_tracker_link": result.get("tpe_tracker_link"),
-            "pos": result.get("pos"),
-            "tpe": result.get("tpe"),
-            "last_updated": result.get("last_updated"),
-            "player_number": result.get("player_number"),
-            "profile": result.get("profile"),
-            "last_seen": result.get("last_seen")
-        })
-        await ctx.send("Claimed player!")
-
-
-@bot.command(name='u', help='Get your user information (NOTE: This one takes some extra time since it has to scrape the'
-                            ' forum. Please be patient.)')
+@bot.command(name='u', help='Get your user information. Updates every hour.')
 async def user_overview(ctx):
     if command_has_no_argument(ctx, "u"):
         await ctx.send(get_user_info(str(ctx.message.author), True))
@@ -203,19 +156,14 @@ def find_player_from_tpe_tracker(player_name):
         "status": "FAILED"
     }
 
-    # TODO: visit link in team name, go to profile, get forum_name so this can easily be claimed by one action
-    # TODO: if person is not in the TPE tracker, check the bank maybe?
-    # TODO: add some error messaging asking if they are new or if they have special characters in their name to also claim their player name
-    # TODO: if none of the extra fields are provided (i.e. we can't find them in the bank or tpe tracker yet), keep trying every time they call the bot
-    # TODO: add a refresh option to look up the player name again in case forum name changes
-    # TODO: should have them claim their forum_name first, do a lookup in the bank since that gets updated first it seems
-
     for row in rows:
+        if resp.get("status") == "SUCCESS":
+            break
+
         row_data = row.findAll("td")
         for data in row_data:
             try:
-                test = handle_special_characters(player_name)
-                if handle_special_characters(data.text) == handle_special_characters(player_name):
+                if handle_special_characters_ignore_case(data.text) == handle_special_characters_ignore_case(player_name):
                     resp.__setitem__("status", "SUCCESS")
                     resp.__setitem__("regression_season", row_data[0].text)
                     resp.__setitem__("team", row_data[1].text)
@@ -260,8 +208,28 @@ def find_player_from_bank(forum_name):
     values = result.get('values', [])
 
     for row in values:
-        if row[1].lower() == forum_name.lower():
-            return row[2]
+        if handle_special_characters_ignore_case(row[1]) == handle_special_characters_ignore_case(forum_name):
+            return handle_special_characters(row[2])
+
+    return None
+
+
+def find_player_from_bank_by_player_name(player_name):
+    bank_sheet_id = "15OMqbS-8cA21JFdettLs6A0K4A1l4Vjls7031uAFAkc"
+    bank_sheet_range = 'Shorrax Import Player Pool!A:H'
+
+    credentials = ServiceAccountCredentials.from_json_keyfile_name("token.json", scopes)
+
+    service = build('sheets', 'v4', credentials=credentials)
+
+    sheet = service.spreadsheets()
+    result = sheet.values().get(spreadsheetId=bank_sheet_id,
+                                range=bank_sheet_range).execute()
+    values = result.get('values', [])
+
+    for row in values:
+        if handle_special_characters_ignore_case(row[2]) == handle_special_characters_ignore_case(player_name):
+            return handle_special_characters(row[1])
 
     return None
 
@@ -308,12 +276,21 @@ def get_user_info(name, is_discord_name):
            "spelling of the forum name or player name you supplied."
 
 
-def get_user_overview(user_info, is_forum_name):
+def get_user_overview(user_info, could_not_find):
     overview = ""
+
     # is forum name is true if all lookups fail
-    if is_forum_name:
-        forum_name = user_info
-        player_name = find_player_from_bank(forum_name)
+    if could_not_find:
+        player_name = find_player_from_bank(user_info)
+
+        # if player name is none, that means we could not find the forum name, so try and see if it's a player name
+        if player_name is None:
+            forum_name = find_player_from_bank_by_player_name(user_info)
+            player_name = user_info
+        else:
+            forum_name = user_info
+            player_name = handle_special_characters(find_player_from_bank(user_info))
+
         balance = lookup_bank_balance(forum_name)
         user_info = find_player_from_tpe_tracker(player_name)
 
@@ -329,7 +306,13 @@ def get_user_overview(user_info, is_forum_name):
                     + '\nBalance: ' + balance
         overview += get_tasks(forum_name)
         return overview
+
     else:
+        forum_name = user_info
+        player_name = handle_special_characters(find_player_from_bank(forum_name))
+        balance = lookup_bank_balance(forum_name)
+        user_info = find_player_from_tpe_tracker(player_name)
+
         balance = lookup_bank_balance(user_info['forum_name'])
         overview += '```' + user_info['player_name'] + '\n---------------\nRegression Season: ' \
                     + user_info['regression_season'] + '\nTeam: ' + user_info['team'] + '\nPosition: ' \
@@ -487,7 +470,7 @@ def get_normalized_name(name):
     return unidecode(name)
 
 
-def handle_special_characters(name):
+def handle_special_characters_ignore_case(name):
     name = name.replace("Ã¶", "ö")
     name = name.replace("Ä", "Đ")
     name = name.replace("Ä‘", "đ")
@@ -498,6 +481,19 @@ def handle_special_characters(name):
     name = name.replace("Å¡", "š")
 
     return name.lower()
+
+
+def handle_special_characters(name):
+    name = name.replace("Ã¶", "ö")
+    name = name.replace("Ä", "Đ")
+    name = name.replace("Ä‘", "đ")
+    name = name.replace("Ä‡", "ć")
+    name = name.replace("\"", "")
+    name = name.replace("Ã¡", "á")
+    name = name.replace("â€™", "’")
+    name = name.replace("Å¡", "š")
+
+    return name
 
 
 # Press the green button in the gutter to run the script.
