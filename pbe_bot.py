@@ -272,8 +272,8 @@ def get_user_info(name, is_discord_name):
         # otherwise scrape it real time
         return get_user_overview(name, True)
 
-    return "Error! Could not find player. Please either claim a forum name by using !claim your_forum_name or check the " \
-           "spelling of the forum name or player name you supplied."
+    return "Error! Could not find player. Please either claim a forum name by using !claim your_forum_name, " \
+           "!claim Player Name, or check the spelling of the forum name or player name you supplied."
 
 
 def get_user_overview(user_info, could_not_find):
