@@ -36,8 +36,7 @@ db = client.pbe
 discord_collection = db.discord
 task_collection = db.tasks
 
-# TODO: store everything in this discord object, forum_name, player_name, page on the tpe-tracker, etc...
-# TODO: may just have to get player name,
+# TODO: add tpe ranking for overall and for regression class
 
 # Discord
 load_dotenv()

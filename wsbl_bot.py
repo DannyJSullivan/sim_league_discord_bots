@@ -41,6 +41,7 @@ discord_collection = db.discord
 player_collection = db.players
 stat_collection = db.player_season_stats
 player_page_collection = db.player_page
+task_collection = db.tasks
 
 # Discord
 load_dotenv()
@@ -450,11 +451,13 @@ def get_user_info(name, is_discord_name):
         if user_info is not None:
             if user_info.get('forum_name') is not None and user_info.get('player_name') is not None:
                 player = player_collection.find_one({"forum_name": re.compile(user_info['forum_name'], re.IGNORECASE),
-                                                     "standard_name": re.compile(user_info['player_name'], re.IGNORECASE)})
+                                                     "standard_name": re.compile(user_info['player_name'],
+                                                                                 re.IGNORECASE)})
             if player is None and user_info.get('forum_name') is not None:
                 player = player_collection.find_one({"forum_name": re.compile(user_info['forum_name'], re.IGNORECASE)})
             if player is None and user_info.get('player_name') is not None:
-                player = player_collection.find_one({"standard_name": re.compile(user_info['player_name'], re.IGNORECASE)})
+                player = player_collection.find_one(
+                    {"standard_name": re.compile(user_info['player_name'], re.IGNORECASE)})
             if player is None:
                 return "```Could not find information for " + name + "```"
     else:
@@ -476,8 +479,7 @@ def get_user_info(name, is_discord_name):
     overview += "Last Updated: " + str(
         get_last_updated(player['forum_name'], player['standard_name'])) + "\n"
     overview += "Balance: " + lookup_bank_balance(player['forum_name']) + "\n"
-    overview += "\nTasks\n----------------\n" + get_tasks(player['forum_name'])
-    overview += "```"
+    overview += "\nTasks\n----------------" + get_tasks(player['forum_name'])
 
     return overview
 
@@ -509,6 +511,8 @@ def get_last_updated(forum_name, player_name):
 
 
 def get_tasks(forum_name):
+    topic_nums = []
+
     formatted_tasks = ""
 
     # activity check
@@ -525,14 +529,39 @@ def get_tasks(forum_name):
     link = rows[1].find("a").get("href")
     name = str(rows[1].text).replace("\n", "").split("(")[0].strip()
 
-    formatted_tasks += name + ": " + parse_forums_for_forum_name(link, forum_name) + "\n"
+    topic_nums.append(get_topic_num_from_url(link))
 
     page_content = requests.get(pt).text
     soup = BeautifulSoup(page_content, "html.parser")
     table = soup.find("div", attrs={"id": "topic-list"})
     rows = table.findAll("tr", attrs={"class": "topic-row"})
 
-    formatted_tasks += get_all_open_pts(rows, forum_name)
+    for row in rows:
+        urls = row.findAll("td", attrs={"class": "row4"})
+        if len(urls) > 2:
+            link = urls[1].find("a").get("href")
+            name = str(urls[1].text).replace("\n", "").split("(Pages")[0].strip()
+            if name != "Introduction PT":
+                topic_nums.append(get_topic_num_from_url(link))
+
+    for topic_num in topic_nums:
+        formatted_tasks = did_user_complete_task(forum_name, topic_num, formatted_tasks)
+
+    return formatted_tasks + "```"
+
+
+def did_user_complete_task(user, task, formatted_tasks):
+    task = task_collection.find_one({"topic_num": task})
+
+    if task is not None:
+        formatted_tasks += "\n" + task['task'] + ": "
+
+        for forum_name in task['names']:
+            if user.lower() == forum_name.lower():
+                formatted_tasks += "✅"
+                return formatted_tasks
+
+        formatted_tasks += "❌"
 
     return formatted_tasks
 
@@ -576,13 +605,16 @@ def get_all_open_pts(active_rows, forum_name):
     return formatted_tasks
 
 
-
 def pad_string_r(value, amount):
     return str(value).rjust(amount)
 
 
 def pad_string_l(value, amount):
     return str(value).ljust(amount)
+
+
+def get_topic_num_from_url(url):
+    return re.split('&showtopic=', url)[1]
 
 
 def ignore_case(x):
