@@ -90,12 +90,16 @@ def get_tasks(league, ac_link, pt_link):
     rows = table.findAll("tr", attrs={"class": "topic-row"})
 
     for row in rows:
-        urls = row.findAll("td", attrs={"class": "row4"})
-        if len(urls) > 2:
-            link = urls[1].find("a").get("href")
-            name = str(urls[1].text).replace("\n", "").split("(Pages")[0].strip()
-            if name != "Introduction PT":
-                update_db(collection, get_topic_num_from_url(link), name, get_completed_forum_names_list(link))
+        # make sure thread is not locked
+        if row.find("img", attrs={"title": "Locked thread"}) is None:
+            urls = row.findAll("td", attrs={"class": "row4"})
+            if len(urls) > 2:
+                link = urls[1].find("a").get("href")
+                name = str(urls[1].text).replace("\n", "").split("(Pages")[0].strip()
+                if "Due: " in name:
+                    name = name.split("Due: ")[0].strip()
+                if name != "Introduction PT":
+                    update_db(collection, get_topic_num_from_url(link), name, get_completed_forum_names_list(link))
 
     return
 
@@ -117,10 +121,12 @@ def get_completed_forum_names_list(link):
     page_content = requests.get(link).text
     soup = BeautifulSoup(page_content, "html.parser")
 
-    pages = soup.find("span", attrs={"class": "pagination_pagetxt"}).text
-    page_count = re.sub("Pages: \\(", "", pages)
-    page_count = re.sub("\\)", "", page_count)
-    page_count = int(page_count)
+    page_count = 1
+    if soup.find("span", attrs={"class": "pagination_pagetxt"}) is not None:
+        pages = soup.find("span", attrs={"class": "pagination_pagetxt"}).text
+        page_count = re.sub("Pages: \\(", "", pages)
+        page_count = re.sub("\\)", "", page_count)
+        page_count = int(page_count)
 
     # go through each page of posts
     for x in range(1, page_count + 1):

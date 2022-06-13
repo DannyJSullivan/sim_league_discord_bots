@@ -363,12 +363,14 @@ def get_tasks(forum_name):
     rows = table.findAll("tr", attrs={"class": "topic-row"})
 
     for row in rows:
-        urls = row.findAll("td", attrs={"class": "row4"})
-        if len(urls) > 2:
-            link = urls[1].find("a").get("href")
-            name = str(urls[1].text).replace("\n", "").split("(Pages")[0].strip()
-            if name != "Introduction PT":
-                topic_nums.append(get_topic_num_from_url(link))
+        # make sure thread is not locked
+        if row.find("img", attrs={"title": "Locked thread"}) is None:
+            urls = row.findAll("td", attrs={"class": "row4"})
+            if len(urls) > 2:
+                link = urls[1].find("a").get("href")
+                name = str(urls[1].text).replace("\n", "").split("(Pages")[0].strip()
+                if name != "Introduction PT":
+                    topic_nums.append(get_topic_num_from_url(link))
 
     for topic_num in topic_nums:
         formatted_tasks = did_user_complete_task(forum_name, topic_num, formatted_tasks)
