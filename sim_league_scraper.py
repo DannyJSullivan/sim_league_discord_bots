@@ -98,6 +98,8 @@ def get_tasks(league, ac_link, pt_link):
                 name = str(urls[1].text).replace("\n", "").split("(Pages")[0].strip()
                 if "Due: " in name:
                     name = name.split("Due: ")[0].strip()
+                if "DEADLINE " in name:
+                    name = name.split("DEADLINE ")[0].strip()
                 if name != "Introduction PT":
                     update_db(collection, get_topic_num_from_url(link), name, get_completed_forum_names_list(link))
 
