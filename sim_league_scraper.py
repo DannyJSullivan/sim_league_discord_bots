@@ -52,8 +52,12 @@ token = 'OTc4NzQ0OTI1MDMyMTc3NzQ0.GwXZ_5.sSgi9IjYttrEo3ovzNSu_yvpiBvknd5Qrv079U'
 client = discord.Client()
 
 
-@client.event
-async def on_message(message):
+@tasks.loop(minutes=5.0, count=None)
+async def update_sim_league_stuff():
+    channel = client.get_channel(id=982369120496517213)
+
+    await channel.send("Updating sim league info...")
+
     print("retrieving pbe tasks...")
     get_pbe_tasks()
 
@@ -64,6 +68,13 @@ async def on_message(message):
     get_wsbl_players()
 
     print("done!")
+
+    await channel.send("Updated!")
+
+
+@client.event
+async def on_ready():
+    client.loop.create_task(update_sim_league_stuff())
 
 
 def get_tasks(league, ac_link, pt_link):
