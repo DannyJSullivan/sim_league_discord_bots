@@ -295,17 +295,17 @@ def get_wsbl_players():
     url_edinburgh = "https://worldsimbasketball.jcink.net/index.php?showforum=125"
     teams.__setitem__(url_edinburgh, "Edinburgh Golden Unicorns")
 
-    # Frankfurt
-    url_frankfurt = "https://worldsimbasketball.jcink.net/index.php?showforum=122"
-    teams.__setitem__(url_frankfurt, "Frankfurt Falkens")
+    # Music City (Formerly Frankfurt Falkens 2001-2022)
+    url_music_city = "https://worldsimbasketball.jcink.net/index.php?showforum=122"
+    teams.__setitem__(url_music_city, "Music City Mountaineers")
 
     # Madrid
     url_madrid = "https://worldsimbasketball.jcink.net/index.php?showforum=128"
     teams.__setitem__(url_madrid, "Madrid Matadors")
 
-    # Ontario
-    url_ontario = "https://worldsimbasketball.jcink.net/index.php?showforum=119"
-    teams.__setitem__(url_ontario, "Ontario Legends")
+    # Columbus Cosmos (Formerly Ontario Legends 2001-2022)
+    url_columbus = "https://worldsimbasketball.jcink.net/index.php?showforum=119"
+    teams.__setitem__(url_columbus, "Columbus Cosmos")
 
     # San Diego
     url_san_diego = "https://worldsimbasketball.jcink.net/index.php?showforum=116"
