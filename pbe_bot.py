@@ -132,7 +132,7 @@ async def claim_user(ctx):
                            "!cp Your Player Name")
 
 
-@bot.command(name='u', help='Get your user information. Updates every hour.')
+@bot.command(name='u', help='Get your user information. Updates every 5 minutes.')
 async def user_overview(ctx):
     if command_has_no_argument(ctx, "u"):
         await ctx.send(get_user_info(str(ctx.message.author), True))
@@ -141,6 +141,59 @@ async def user_overview(ctx):
         name = str(ctx.message.content).replace("!u", "").strip()
         await ctx.send(get_user_info(name, False))
         return
+
+
+@bot.command(name='tasks', help='Get the links to the active tasks.')
+async def active_tasks(ctx):
+    embed = discord.Embed(title="Active Tasks",
+                          color=0x8C0B0B)
+    get_active_tasks(embed)
+    await ctx.send(embed=embed)
+    return
+
+
+@bot.command(name='b', help='Get your bank balance')
+async def bank(ctx):
+    if command_has_no_argument(ctx, "b"):
+        forum_name = lookup_forum_name(str(ctx.message.author))
+        balance = lookup_bank_balance(forum_name)
+
+        if balance is not None:
+            await ctx.send(forum_name + ": " + balance)
+            return
+
+        await ctx.send("Could not find balance for: " + str(ctx.message.author))
+    else:
+        forum_name = str(ctx.message.content).replace("!b", "").strip()
+        balance = lookup_bank_balance(forum_name)
+
+        if balance is not None:
+            await ctx.send(forum_name + ": " + balance)
+            return
+
+        await ctx.send("Could not find balance for: " + forum_name)
+
+
+@bot.command(name='t', help='Get your 10 most recent transactions')
+async def transactions(ctx):
+    if command_has_no_argument(ctx, "t"):
+        forum_name = lookup_forum_name(str(ctx.message.author))
+        t = lookup_transactions(forum_name)
+
+        if t is not None:
+            await ctx.send("```" + t + "```")
+            return
+
+        await ctx.send("Could not find transactions for: " + str(ctx.message.author))
+    else:
+        forum_name = str(ctx.message.content).replace("!t", "").strip()
+        t = lookup_transactions(forum_name)
+
+        if t is not None:
+            await ctx.send("```" + t + "```")
+            return
+
+        await ctx.send("Could not find transactions for: " + forum_name)
 
 
 def find_player_from_tpe_tracker(player_name):
@@ -434,6 +487,46 @@ def get_all_open_pts(active_rows, forum_name):
     return formatted_tasks
 
 
+def get_active_tasks(embed):
+    task_array = []
+
+    # activity check (only get the top one)
+    ac = "https://probaseballexperience.jcink.net/index.php?showforum=77"
+
+    # point tasks (get all forum topics except for the last one
+    pt = "https://probaseballexperience.jcink.net/index.php?showforum=56"
+
+    page_content = requests.get(ac).text
+    soup = BeautifulSoup(page_content, "html.parser")
+    table = soup.find("div", attrs={"id": "topic-list"})
+    newest_topic = table.find("tr", attrs={"class": "topic-row"})
+    rows = newest_topic.findAll("td", attrs={"class": "row4"})
+    link = rows[1].find("a").get("href")
+    name = str(rows[1].text).replace("\n", "").split("(")[0].strip()
+
+    task_array.append({"name": name, "link": link})
+
+    page_content = requests.get(pt).text
+    soup = BeautifulSoup(page_content, "html.parser")
+    table = soup.find("div", attrs={"id": "topic-list"})
+    rows = table.findAll("tr", attrs={"class": "topic-row"})
+
+    for row in rows:
+        # make sure thread is not locked
+        if row.find("img", attrs={"title": "Locked thread"}) is None:
+            urls = row.findAll("td", attrs={"class": "row4"})
+            if len(urls) > 2:
+                link = urls[1].find("a").get("href")
+                name = str(urls[1].text).replace("\n", "").split("(Pages")[0].strip()
+                if name != "Introduction PT":
+                    task_array.append({"name": name, "link": link})
+
+    for task in task_array:
+        embed.add_field(name=task.get('name'), value="[Visit task...](" + task.get('link') + ")")
+
+    return embed
+
+
 # TODO: go through every task every 10 minutes and track all the forum names that have completed that task.
 #       save them off and then go through the saved data
 def get_who_completed_tasks():
@@ -442,6 +535,60 @@ def get_who_completed_tasks():
 
     # point tasks (get all forum topics except for the last one
     pt = "https://probaseballexperience.jcink.net/index.php?showforum=56"
+
+
+def lookup_forum_name(discord_name):
+    document = discord_collection.find_one({"discord": re.compile(discord_name, re.IGNORECASE)})
+    if document is not None:
+        return document.get("forum_name")
+    else:
+        return None
+
+
+def lookup_transactions(forum_name):
+    bank_sheet_id = "15OMqbS-8cA21JFdettLs6A0K4A1l4Vjls7031uAFAkc"
+    bank_sheet_range = 'Logs!A:H'
+
+    credentials = ServiceAccountCredentials.from_json_keyfile_name("token.json", scopes)
+
+    service = build('sheets', 'v4', credentials=credentials)
+
+    sheet = service.spreadsheets()
+    result = sheet.values().get(spreadsheetId=bank_sheet_id,
+                                range=bank_sheet_range).execute()
+    values = result.get('values', [])
+
+    ts = []
+
+    for row in values:
+        if row[2].lower() == forum_name.lower():
+            if len(row) < 8:
+                ts.append([row[0], row[2], row[6], "N/A"])
+            else:
+                ts.append([row[0], row[2], row[6], row[7]])
+
+    if len(ts) == 0:
+        return "No transactions found for " + forum_name + "."
+
+    uname_len = 0
+    if len(forum_name) < len("username"):
+        uname_len = len("username") + 2
+    else:
+        uname_len = len(forum_name) + 2
+
+    t = pad_string_l("date", 10) + "|" + pad_string_r("username", uname_len) + " | " + pad_string_r("net", 11) + " | " \
+        + pad_string_l("source", 0) + "\n--------------------------------------------------------------\n"
+
+    if len(ts) <= 10:
+        for row in ts:
+            t += (pad_string_l(row[0], 10) + "|" + pad_string_r(row[1], uname_len) + " | " + pad_string_r(row[2], 11) +
+                  " | " + pad_string_l(row[3], 0) + "\n")
+    else:
+        for row in ts[len(ts) - 10:]:
+            t += (pad_string_l(row[0], 10) + "|" + pad_string_r(row[1], uname_len) + " | " + pad_string_r(row[2], 11) +
+                  " | " + pad_string_l(row[3], 0) + "\n")
+
+    return t
 
 
 def pad_string_r(value, amount):

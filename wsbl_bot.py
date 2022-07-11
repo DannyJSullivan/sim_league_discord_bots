@@ -342,6 +342,15 @@ async def transactions(ctx):
         await ctx.send("Could not find transactions for: " + forum_name)
 
 
+@bot.command(name='tasks', help='Get the links to the active tasks.')
+async def active_tasks(ctx):
+    embed = discord.Embed(title="Active Tasks",
+                          color=0x14488F)
+    get_active_tasks(embed)
+    await ctx.send(embed=embed)
+    return
+
+
 def lookup_forum_name(discord_name):
     document = discord_collection.find_one({"discord": re.compile(discord_name, re.IGNORECASE)})
     if document is not None:
@@ -431,8 +440,7 @@ def lookup_transactions(forum_name):
     return t
 
 
-@bot.command(name='u', help='Get your user information (NOTE: This one takes some extra time since it has to scrape the'
-                            ' forum. Please be patient.)')
+@bot.command(name='u', help='Get your user information.')
 async def user_overview(ctx):
     if command_has_no_argument(ctx, "u"):
         await ctx.send(get_user_info(str(ctx.message.author), True))
@@ -605,6 +613,46 @@ def get_all_open_pts(active_rows, forum_name):
             formatted_tasks += name + ": " + parse_forums_for_forum_name(link, forum_name) + "\n"
 
     return formatted_tasks
+
+
+def get_active_tasks(embed):
+    task_array = []
+
+    # activity check
+    ac = "https://worldsimbasketball.jcink.net/index.php?showforum=5"
+
+    # point tasks
+    pt = "https://worldsimbasketball.jcink.net/index.php?showforum=7"
+
+    page_content = requests.get(ac).text
+    soup = BeautifulSoup(page_content, "html.parser")
+    table = soup.find("div", attrs={"id": "topic-list"})
+    newest_topic = table.find("tr", attrs={"class": "topic-row"})
+    rows = newest_topic.findAll("td", attrs={"class": "row4"})
+    link = rows[1].find("a").get("href")
+    name = str(rows[1].text).replace("\n", "").split("(")[0].strip()
+
+    task_array.append({"name": name, "link": link})
+
+    page_content = requests.get(pt).text
+    soup = BeautifulSoup(page_content, "html.parser")
+    table = soup.find("div", attrs={"id": "topic-list"})
+    rows = table.findAll("tr", attrs={"class": "topic-row"})
+
+    for row in rows:
+        # make sure thread is not locked
+        if row.find("img", attrs={"title": "Locked thread"}) is None:
+            urls = row.findAll("td", attrs={"class": "row4"})
+            if len(urls) > 2:
+                link = urls[1].find("a").get("href")
+                name = str(urls[1].text).replace("\n", "").split("(Pages")[0].strip()
+                if name != "Introduction PT":
+                    task_array.append({"name": name, "link": link})
+
+    for task in task_array:
+        embed.add_field(name=task.get('name'), value="[Visit task...](" + task.get('link') + ")")
+
+    return embed
 
 
 def pad_string_r(value, amount):
