@@ -1,5 +1,6 @@
 import os
 import random
+import math
 import discord
 from discord.ext import commands
 from discord.ext import tasks
@@ -196,6 +197,30 @@ async def transactions(ctx):
         await ctx.send("Could not find transactions for: " + forum_name)
 
 
+@bot.command(name='dylan', help='Get dylan\'s info')
+async def active_tasks(ctx):
+    embed = discord.Embed(title="Balance for dylan",
+                          color=0x8C0B0B)
+    accounts = get_all_bank_accounts()
+    balance = 0
+    rank = 0
+    percentile = 0
+
+    for account in accounts:
+        rank += 1
+        if account.get('name').lower() == "dylan":
+            balance = account.get('balance')
+            break
+
+    percentile = 100 - float(rank / len(accounts)) * 100
+
+    embed.add_field(name="Total Balance", value="${:,}".format(balance), inline=False)
+    embed.add_field(name="Rank", value=rank, inline=False)
+    embed.add_field(name="Percentile", value="{0:0.2f}".format(percentile) + "%", inline=False)
+    await ctx.send(embed=embed)
+    return
+
+
 def find_player_from_tpe_tracker(player_name):
     tpe_tracker = 'http://pbe-tpe-tracker.herokuapp.com/players'
     pbe_topic_url = 'https://probaseballexperience.jcink.net/index.php?showtopic='
@@ -304,6 +329,28 @@ def lookup_bank_balance(forum_name):
             return row[4]
 
     return None
+
+
+def get_all_bank_accounts():
+    accounts = []
+
+    bank_sheet_id = "15OMqbS-8cA21JFdettLs6A0K4A1l4Vjls7031uAFAkc"
+    bank_sheet_range = 'Shorrax Import Player Pool!A:H'
+
+    credentials = ServiceAccountCredentials.from_json_keyfile_name("token.json", scopes)
+
+    service = build('sheets', 'v4', credentials=credentials)
+
+    sheet = service.spreadsheets()
+    result = sheet.values().get(spreadsheetId=bank_sheet_id,
+                                range=bank_sheet_range).execute()
+    values = result.get('values', [])
+
+    for row in values:
+        if row[4].lower() != 'balance':
+            accounts.append({'name': row[1], 'balance': int(row[4].replace('$', '').replace(',', ''))})
+
+    return sorted(accounts, key=lambda item: item['balance'], reverse=True)
 
 
 def get_user_info(name, is_discord_name):
