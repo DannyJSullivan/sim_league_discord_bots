@@ -174,9 +174,9 @@ async def bank(ctx):
         await ctx.send("Could not find balance for: " + forum_name)
 
 
-@bot.command(name='t', help='Get your 10 most recent transactions')
+@bot.command(name='tr', help='Get your 10 most recent transactions')
 async def transactions(ctx):
-    if command_has_no_argument(ctx, "t"):
+    if command_has_no_argument(ctx, "tr"):
         forum_name = lookup_forum_name(str(ctx.message.author))
         t = lookup_transactions(forum_name)
 
@@ -186,7 +186,7 @@ async def transactions(ctx):
 
         await ctx.send("Could not find transactions for: " + str(ctx.message.author))
     else:
-        forum_name = str(ctx.message.content).replace("!t", "").strip()
+        forum_name = str(ctx.message.content).replace("!tr", "").strip()
         t = lookup_transactions(forum_name)
 
         if t is not None:
