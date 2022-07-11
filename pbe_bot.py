@@ -37,6 +37,7 @@ db = client.pbe
 discord_collection = db.discord
 task_collection = db.tasks
 
+# TODO: add media to transactions log
 # TODO: add tpe ranking for overall and for regression class
 
 # Discord
@@ -196,28 +197,34 @@ async def transactions(ctx):
 
         await ctx.send("Could not find transactions for: " + forum_name)
 
+# TODO: do this later
+# @bot.command(name='dylan', help='Get dylan\'s info')
+# async def active_tasks(ctx):
+#     embed = discord.Embed(title="Balance for dylan",
+#                           color=0x8C0B0B)
+#     accounts = get_all_bank_accounts()
+#     balance = 0
+#     rank = 0
+#     percentile = 0
+#
+#     for account in accounts:
+#         rank += 1
+#         if account.get('name').lower() == "dylan":
+#             balance = account.get('balance')
+#             break
+#
+#     percentile = 100 - float(rank / len(accounts)) * 100
+#
+#     embed.add_field(name="Total Balance", value="${:,}".format(balance), inline=False)
+#     embed.add_field(name="Rank", value=rank, inline=False)
+#     embed.add_field(name="Percentile", value="{0:0.2f}".format(percentile) + "%", inline=False)
+#     await ctx.send(embed=embed)
+#     return
 
-@bot.command(name='dylan', help='Get dylan\'s info')
-async def active_tasks(ctx):
-    embed = discord.Embed(title="Balance for dylan",
-                          color=0x8C0B0B)
-    accounts = get_all_bank_accounts()
-    balance = 0
-    rank = 0
-    percentile = 0
 
-    for account in accounts:
-        rank += 1
-        if account.get('name').lower() == "dylan":
-            balance = account.get('balance')
-            break
-
-    percentile = 100 - float(rank / len(accounts)) * 100
-
-    embed.add_field(name="Total Balance", value="${:,}".format(balance), inline=False)
-    embed.add_field(name="Rank", value=rank, inline=False)
-    embed.add_field(name="Percentile", value="{0:0.2f}".format(percentile) + "%", inline=False)
-    await ctx.send(embed=embed)
+@bot.command(name='dylan', help='DYLAN')
+async def dylan(ctx):
+    await ctx.send("dylan is the best!")
     return
 
 
