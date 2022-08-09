@@ -383,8 +383,6 @@ def get_user_info(name, is_discord_name):
 
 
 def get_user_overview(user_info, could_not_find):
-    overview = ""
-
     # is forum name is true if all lookups fail
     if could_not_find:
         player_name = find_player_from_bank(user_info)
@@ -405,13 +403,19 @@ def get_user_overview(user_info, could_not_find):
                    "the tracker soon and all their information will be available. If the player name has " \
                    "special characters, some may not be recognized."
 
-        overview += '```' + player_name + '\n---------------\nRegression Season: ' \
-                    + user_info['regression_season'] + '\nTeam: ' + user_info['team'] + '\nPosition: ' \
-                    + user_info['pos'] + '\nTPE: ' + user_info['tpe'] + '\nForum Name: ' + forum_name \
-                    + '\nLast Seen: ' + user_info['last_seen'] + '\nLast Updated: ' + user_info['last_updated'] \
-                    + '\nBalance: ' + balance
-        overview += get_tasks(forum_name)
-        return overview
+        return f"""```
+{player_name}
+---------------
+Regression Season: {user_info["regression_season"]}
+Team: {user_info["team"]}
+Position: {user_info["pos"]}
+TPE: {user_info["tpe"]}
+Forum Name: {forum_name}
+Last Seen: {user_info["last_seen"]}
+Last Updated: {user_info["last_updated"]}
+Balance: {balance}
+{get_tasks(forum_name)}
+```"""
 
     else:
         forum_name = user_info['forum_name']
@@ -420,13 +424,20 @@ def get_user_overview(user_info, could_not_find):
         balance = lookup_bank_balance(forum_name)
         user_info = find_player_from_tpe_tracker(player_name)
 
-        overview += '```' + player_name + '\n---------------\nRegression Season: ' \
-                    + user_info['regression_season'] + '\nTeam: ' + user_info['team'] + '\nPosition: ' \
-                    + user_info['pos'] + '\nTPE: ' + user_info['tpe'] + '\nForum Name: ' + forum_name \
-                    + '\nLast Seen: ' + user_info['last_seen'] + '\nLast Updated: ' + user_info['last_updated'] \
-                    + '\nBalance: ' + balance + "\nDiscord: " + discord
-        overview += get_tasks(forum_name)
-        return overview
+        return f"""```
+{player_name}
+---------------
+Regression Season: {user_info["regression_season"]}
+Team: {user_info["team"]}
+Position: {user_info["pos"]}
+TPE: {user_info["tpe"]}
+Forum Name: {forum_name}
+Last Seen: {user_info["last_seen"]}
+Last Updated: {user_info["last_updated"]}
+Balance: {balance}
+Discord: {discord}
+{get_tasks(forum_name)}
+```"""
 
 
 def get_last_seen(url):
@@ -446,7 +457,7 @@ def get_last_seen(url):
 def get_tasks(forum_name):
     topic_nums = []
 
-    formatted_tasks = "\n\nTasks\n---------------"
+    formatted_tasks = "\nTasks\n---------------"
 
     # activity check (only get the top one)
     ac = "https://probaseballexperience.jcink.net/index.php?showforum=77"
@@ -482,7 +493,7 @@ def get_tasks(forum_name):
     for topic_num in topic_nums:
         formatted_tasks = did_user_complete_task(forum_name, topic_num, formatted_tasks)
 
-    return formatted_tasks + "```"
+    return formatted_tasks
 
 
 def did_user_complete_task(user, task, formatted_tasks):
