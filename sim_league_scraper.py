@@ -54,7 +54,7 @@ client = discord.Client()
 @tasks.loop(minutes=5.0, count=None)
 async def update_sim_league_stuff():
     channel_id = os.getenv("STATUS_CHANNEL_ID")
-    channel = client.get_channel(id=itn(channel_id))
+    channel = client.get_channel(id=int(channel_id))
 
     await channel.send("Updating sim league info...")
 
