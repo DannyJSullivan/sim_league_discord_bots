@@ -20,6 +20,8 @@ from google.oauth2.credentials import Credentials
 import requests
 from bs4 import BeautifulSoup
 
+load_dotenv()
+
 # google sheets
 scopes = [
     'https://www.googleapis.com/auth/spreadsheets',
@@ -29,10 +31,8 @@ scopes = [
 # gmail account: wsbl-google-sheets@world-sim-basketball-league.iam.gserviceaccount.com
 
 # MongoDB
-client = pymongo.MongoClient(
-    "mongodb://test:test@cluster0-shard-00-00.k0fe1.mongodb.net:27017,cluster0-shard-00-01.k0fe1.mongodb.net:27017,"
-    "cluster0-shard-00-02.k0fe1.mongodb.net:27017/myFirstDatabase?ssl=true&replicaSet=Cluster0-shard-0&authSource"
-    "=admin&retryWrites=true&w=majority")
+mongo_uri = os.getenv("MONGO_URI")
+client = pymongo.MongoClient(mongo_uri)
 db = client.pbe
 discord_collection = db.discord
 task_collection = db.tasks
@@ -41,13 +41,15 @@ task_collection = db.tasks
 # TODO: add tpe ranking for overall and for regression class
 
 # Discord
-load_dotenv()
-token = 'OTc4NzMzNjczNjA2MTcyNzEz.G1a7Ne.v6-hZsJfL9SC8mqdD6mJbmfSRT02oQ322j3NRA'
+token = os.getenv("PBE_DISCORD_TOKEN")
 client = discord.Client()
 
-bot = commands.Bot(command_prefix='!')
+prefix = os.environ.get("PBE_PREFIX")
+bot = commands.Bot(command_prefix=prefix)
 
 # Claim user
+
+
 @bot.command(name='claim', help='Claim your forum username or player name')
 async def claim_user(ctx):
     doc_id = ""
@@ -273,7 +275,6 @@ def find_player_from_tpe_tracker(player_name):
             if "Last Seen: " in stat.text:
                 resp.__setitem__("last_seen", stat.text.replace("Last Seen: ", "").strip())
                 return resp
-
 
     return resp
 
