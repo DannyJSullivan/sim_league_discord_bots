@@ -283,7 +283,8 @@ def find_player_from_bank(forum_name):
     bank_sheet_id = "15OMqbS-8cA21JFdettLs6A0K4A1l4Vjls7031uAFAkc"
     bank_sheet_range = 'Shorrax Import Player Pool!A:H'
 
-    credentials = ServiceAccountCredentials.from_json_keyfile_name("token.json", scopes)
+    key = json.loads(os.environ.get("GCP_KEY"))
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(key)
 
     service = build('sheets', 'v4', credentials=credentials)
 
@@ -303,7 +304,8 @@ def find_player_from_bank_by_player_name(player_name):
     bank_sheet_id = "15OMqbS-8cA21JFdettLs6A0K4A1l4Vjls7031uAFAkc"
     bank_sheet_range = 'Shorrax Import Player Pool!A:H'
 
-    credentials = ServiceAccountCredentials.from_json_keyfile_name("token.json", scopes)
+    key = json.loads(os.environ.get("GCP_KEY"))
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(key)
 
     service = build('sheets', 'v4', credentials=credentials)
 
@@ -323,7 +325,8 @@ def lookup_bank_balance(forum_name):
     bank_sheet_id = "15OMqbS-8cA21JFdettLs6A0K4A1l4Vjls7031uAFAkc"
     bank_sheet_range = 'Shorrax Import Player Pool!A:H'
 
-    credentials = ServiceAccountCredentials.from_json_keyfile_name("token.json", scopes)
+    key = json.loads(os.environ.get("GCP_KEY"))
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(key)
 
     service = build('sheets', 'v4', credentials=credentials)
 
@@ -345,7 +348,8 @@ def get_all_bank_accounts():
     bank_sheet_id = "15OMqbS-8cA21JFdettLs6A0K4A1l4Vjls7031uAFAkc"
     bank_sheet_range = 'Shorrax Import Player Pool!A:H'
 
-    credentials = ServiceAccountCredentials.from_json_keyfile_name("token.json", scopes)
+    key = json.loads(os.environ.get("GCP_KEY"))
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(key)
 
     service = build('sheets', 'v4', credentials=credentials)
 
@@ -604,7 +608,8 @@ def lookup_transactions(forum_name):
     bank_sheet_id = "15OMqbS-8cA21JFdettLs6A0K4A1l4Vjls7031uAFAkc"
     bank_sheet_range = 'Logs!A:H'
 
-    credentials = ServiceAccountCredentials.from_json_keyfile_name("token.json", scopes)
+    key = json.loads(os.environ.get("GCP_KEY"))
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(key)
 
     service = build('sheets', 'v4', credentials=credentials)
 

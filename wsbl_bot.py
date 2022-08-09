@@ -378,7 +378,8 @@ def lookup_bank_balance(forum_name):
     bank_sheet_id = "1BM-GFR5ddXPgsoYAhtGlkrkBHOY6AuLPXBFayIGDTqA"
     bank_sheet_range = 'Master Sheet!A:H'
 
-    credentials = ServiceAccountCredentials.from_json_keyfile_name("token.json", scopes)
+    key = json.loads(os.environ.get("GCP_KEY"))
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(key)
 
     service = build('sheets', 'v4', credentials=credentials)
 
@@ -398,7 +399,8 @@ def lookup_transactions(forum_name):
     bank_sheet_id = "1BM-GFR5ddXPgsoYAhtGlkrkBHOY6AuLPXBFayIGDTqA"
     bank_sheet_range = 'Transaction Logs!A:H'
 
-    credentials = ServiceAccountCredentials.from_json_keyfile_name("token.json", scopes)
+    key = json.loads(os.environ.get("GCP_KEY"))
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(key)
 
     service = build('sheets', 'v4', credentials=credentials)
 
