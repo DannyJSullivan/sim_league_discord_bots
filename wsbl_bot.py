@@ -44,7 +44,7 @@ player_page_collection = db.player_page
 task_collection = db.tasks
 
 # Discord
-token = os.getenv("PBE_DISCORD_TOKEN")
+token = os.getenv("WSBL_DISCORD_TOKEN")
 client = discord.Client()
 
 prefix = os.environ.get("WSBL_PREFIX")

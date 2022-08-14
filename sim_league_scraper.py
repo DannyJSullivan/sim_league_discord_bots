@@ -47,7 +47,7 @@ wsbl_player_collection = wsbl_db.players
 # TODO: may just have to get player name,
 
 # Discord
-token = os.getenv("PBE_DISCORD_TOKEN")
+token = os.getenv("SIM_LEAGUE_SCRAPER_DISCORD_TOKEN")
 client = discord.Client()
 
 
