@@ -23,6 +23,8 @@ from google.oauth2.credentials import Credentials
 import requests
 from bs4 import BeautifulSoup
 
+load_dotenv()
+
 # google sheets
 scopes = [
     'https://www.googleapis.com/auth/spreadsheets',
@@ -32,10 +34,8 @@ scopes = [
 # gmail account: wsbl-google-sheets@world-sim-basketball-league.iam.gserviceaccount.com
 
 # MongoDB
-client = pymongo.MongoClient(
-    "mongodb://test:test@cluster0-shard-00-00.k0fe1.mongodb.net:27017,cluster0-shard-00-01.k0fe1.mongodb.net:27017,"
-    "cluster0-shard-00-02.k0fe1.mongodb.net:27017/myFirstDatabase?ssl=true&replicaSet=Cluster0-shard-0&authSource"
-    "=admin&retryWrites=true&w=majority")
+mongo_uri = os.getenv("MONGO_URI")
+client = pymongo.MongoClient(mongo_uri)
 db = client.wsbl
 discord_collection = db.discord
 player_collection = db.players
@@ -44,11 +44,11 @@ player_page_collection = db.player_page
 task_collection = db.tasks
 
 # Discord
-load_dotenv()
-token = ('OTE0OTcyNDMxNDk4NzY4Mzg0.YaU0ew.zyuqoI3AUxyCp29f5W1cT8Rn2ZQ')
+token = os.getenv("WSBL_DISCORD_TOKEN")
 client = discord.Client()
 
-bot = commands.Bot(command_prefix='!')
+prefix = os.environ.get("WSBL_PREFIX")
+bot = commands.Bot(command_prefix=prefix)
 
 
 # Claim forum username
@@ -378,7 +378,8 @@ def lookup_bank_balance(forum_name):
     bank_sheet_id = "1BM-GFR5ddXPgsoYAhtGlkrkBHOY6AuLPXBFayIGDTqA"
     bank_sheet_range = 'Master Sheet!A:H'
 
-    credentials = ServiceAccountCredentials.from_json_keyfile_name("token.json", scopes)
+    key = json.loads(os.environ.get("GCP_KEY"))
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(key)
 
     service = build('sheets', 'v4', credentials=credentials)
 
@@ -398,7 +399,8 @@ def lookup_transactions(forum_name):
     bank_sheet_id = "1BM-GFR5ddXPgsoYAhtGlkrkBHOY6AuLPXBFayIGDTqA"
     bank_sheet_range = 'Transaction Logs!A:H'
 
-    credentials = ServiceAccountCredentials.from_json_keyfile_name("token.json", scopes)
+    key = json.loads(os.environ.get("GCP_KEY"))
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(key)
 
     service = build('sheets', 'v4', credentials=credentials)
 

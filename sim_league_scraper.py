@@ -20,6 +20,8 @@ from google.oauth2.credentials import Credentials
 import requests
 from bs4 import BeautifulSoup
 
+load_dotenv()
+
 # TODO: When adding new imports, be sure to add them to the requirements.txt file. Run pip freeze >
 #  requirements.txt to do so.
 
@@ -32,10 +34,8 @@ scopes = [
 # gmail account: wsbl-google-sheets@world-sim-basketball-league.iam.gserviceaccount.com
 
 # MongoDB
-client = pymongo.MongoClient(
-    "mongodb://test:test@cluster0-shard-00-00.k0fe1.mongodb.net:27017,cluster0-shard-00-01.k0fe1.mongodb.net:27017,"
-    "cluster0-shard-00-02.k0fe1.mongodb.net:27017/myFirstDatabase?ssl=true&replicaSet=Cluster0-shard-0&authSource"
-    "=admin&retryWrites=true&w=majority")
+mongo_uri = os.getenv("MONGO_URI")
+client = pymongo.MongoClient(mongo_uri)
 pbe_db = client.pbe
 pbe_task_collection = pbe_db.tasks
 
@@ -47,14 +47,14 @@ wsbl_player_collection = wsbl_db.players
 # TODO: may just have to get player name,
 
 # Discord
-load_dotenv()
-token = 'OTc4NzQ0OTI1MDMyMTc3NzQ0.GwXZ_5.sSgi9IjYttrEo3ovzNSu_yvpiBvknd5Qrv079U'
+token = os.getenv("SIM_LEAGUE_SCRAPER_DISCORD_TOKEN")
 client = discord.Client()
 
 
 @tasks.loop(minutes=5.0, count=None)
 async def update_sim_league_stuff():
-    channel = client.get_channel(id=982369120496517213)
+    channel_id = os.getenv("STATUS_CHANNEL_ID")
+    channel = client.get_channel(id=int(channel_id))
 
     await channel.send("Updating sim league info...")
 
