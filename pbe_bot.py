@@ -574,7 +574,7 @@ def get_active_tasks(embed):
     link = rows[1].find("a").get("href")
     name = str(rows[1].text).replace("\n", "").split("(")[0].strip()
 
-    task_array.append({"name": name, "link": link})
+    task_array.append({"name": name, "link": untrackify(link)})
 
     page_content = requests.get(pt).text
     soup = BeautifulSoup(page_content, "html.parser")
@@ -589,12 +589,20 @@ def get_active_tasks(embed):
                 link = urls[1].find("a").get("href")
                 name = str(urls[1].text).replace("\n", "").split("(Pages")[0].strip()
                 if name != "Introduction PT":
-                    task_array.append({"name": name, "link": link})
+                    task_array.append({"name": name, "link": untrackify(link)})
 
     for task in task_array:
         embed.add_field(name=task.get('name'), value="[Visit task...](" + task.get('link') + ")")
 
     return embed
+
+
+# Removes any session ID (query parameter s with a hex string argument) from a URL
+# The default args here are a bit of a hack to ensure the patterns are only compiled once
+# head_pattern matches s=<hex string> and an optional & following a ?
+# tail_pattern matches &s=<hex string>
+def untrackify(url, head_pattern=re.compile(R"(?<=\?)s=[0-9a-f]*&?"), tail_pattern=re.compile(R"&s=[0-9a-f]*")):
+    return re.sub(head_pattern, "", re.sub(tail_pattern, "", url))
 
 
 # TODO: go through every task every 10 minutes and track all the forum names that have completed that task.
