@@ -99,7 +99,7 @@ async def transactions(ctx):
 async def transactions(ctx):
     if command_has_no_argument(ctx, "m"):
         forum_name = lookup_forum_name(str(ctx.message.author))
-        t = lookup_media_transactions(forum_name)
+        t = format_most_recent_transactions(lookup_media_transactions(forum_name), forum_name, False)
 
         if t is not None:
             await ctx.send("```" + t + "```")
@@ -108,7 +108,7 @@ async def transactions(ctx):
         await ctx.send("Could not find transactions for: " + str(ctx.message.author))
     else:
         forum_name = str(ctx.message.content).replace("$m", "").strip()
-        t = lookup_media_transactions(forum_name)
+        t = format_most_recent_transactions(lookup_media_transactions(forum_name), forum_name, False)
 
         if t is not None:
             await ctx.send("```" + t + "```")
@@ -121,7 +121,7 @@ async def transactions(ctx):
 async def transactions(ctx):
     if command_has_no_argument(ctx, "g"):
         forum_name = lookup_forum_name(str(ctx.message.author))
-        t = lookup_graphic_transactions(forum_name)
+        t = format_most_recent_transactions(lookup_graphic_transactions(forum_name), forum_name, False)
 
         if t is not None:
             await ctx.send("```" + t + "```")
@@ -130,7 +130,7 @@ async def transactions(ctx):
         await ctx.send("Could not find transactions for: " + str(ctx.message.author))
     else:
         forum_name = str(ctx.message.content).replace("$g", "").strip()
-        t = lookup_graphic_transactions(forum_name)
+        t = format_most_recent_transactions(lookup_graphic_transactions(forum_name), forum_name, False)
 
         if t is not None:
             await ctx.send("```" + t + "```")
@@ -143,7 +143,7 @@ async def transactions(ctx):
 async def transactions(ctx):
     if command_has_no_argument(ctx, "v"):
         forum_name = lookup_forum_name(str(ctx.message.author))
-        t = lookup_video_transactions(forum_name)
+        t = format_most_recent_transactions(lookup_video_transactions(forum_name), forum_name, False)
 
         if t is not None:
             await ctx.send("```" + t + "```")
@@ -152,7 +152,7 @@ async def transactions(ctx):
         await ctx.send("Could not find transactions for: " + str(ctx.message.author))
     else:
         forum_name = str(ctx.message.content).replace("$v", "").strip()
-        t = lookup_video_transactions(forum_name)
+        t = format_most_recent_transactions(lookup_video_transactions(forum_name), forum_name, False)
 
         if t is not None:
             await ctx.send("```" + t + "```")
