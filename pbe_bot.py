@@ -156,48 +156,14 @@ async def active_tasks(ctx):
     return
 
 
-@bot.command(name='b', help='Get your bank balance')
+@bot.command(name='b', help='*DEPRECATED* Get your bank balance')
 async def bank(ctx):
-    if command_has_no_argument(ctx, "b"):
-        forum_name = lookup_forum_name(str(ctx.message.author))
-        balance = lookup_bank_balance(forum_name)
-
-        if balance is not None:
-            await ctx.send(forum_name + ": " + balance)
-            return
-
-        await ctx.send("Could not find balance for: " + str(ctx.message.author))
-    else:
-        forum_name = str(ctx.message.content).replace("!b", "").strip()
-        balance = lookup_bank_balance(forum_name)
-
-        if balance is not None:
-            await ctx.send(forum_name + ": " + balance)
-            return
-
-        await ctx.send("Could not find balance for: " + forum_name)
+    await ctx.send("Call $b to get your balance.")
 
 
-@bot.command(name='tr', help='Get your 10 most recent transactions')
+@bot.command(name='tr', help='*DEPRECATED* Get your 10 most recent transactions')
 async def transactions(ctx):
-    if command_has_no_argument(ctx, "tr"):
-        forum_name = lookup_forum_name(str(ctx.message.author))
-        t = lookup_transactions(forum_name)
-
-        if t is not None:
-            await ctx.send("```" + t + "```")
-            return
-
-        await ctx.send("Could not find transactions for: " + str(ctx.message.author))
-    else:
-        forum_name = str(ctx.message.content).replace("!tr", "").strip()
-        t = lookup_transactions(forum_name)
-
-        if t is not None:
-            await ctx.send("```" + t + "```")
-            return
-
-        await ctx.send("Could not find transactions for: " + forum_name)
+    await ctx.send("Call $t to get your most recent transactions.")
 
 # TODO: do this later
 # @bot.command(name='dylan', help='Get dylan\'s info')
