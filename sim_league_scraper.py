@@ -61,11 +61,12 @@ async def update_sim_league_stuff():
     print("retrieving pbe tasks...")
     get_pbe_tasks()
 
-    print("retrieving wsbl tasks...")
-    get_wsbl_tasks()
-
-    print("scraping wsbl players...")
-    get_wsbl_players()
+    # RIP WSBL
+    # print("retrieving wsbl tasks...")
+    # get_wsbl_tasks()
+    #
+    # print("scraping wsbl players...")
+    # get_wsbl_players()
 
     print("done!")
 
