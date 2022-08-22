@@ -228,7 +228,7 @@ def find_player_from_tpe_tracker(player_name):
             except:
                 return resp
 
-    if resp.get("status", "SUCCESS"):
+    if resp.get("status") == "SUCCESS":
         page_content = requests.get(pbe_topic_url + resp.get("player_number")).text
         soup = BeautifulSoup(page_content, "html.parser")
         profile_url = soup.find("span", attrs={"class": "normalname"}).find("a").get("href")
