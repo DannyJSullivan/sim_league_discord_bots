@@ -18,6 +18,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 import requests
+import time
 from bs4 import BeautifulSoup
 
 load_dotenv()
@@ -61,14 +62,11 @@ async def update_sim_league_stuff():
     print("retrieving pbe tasks...")
     get_pbe_tasks()
 
-    # RIP WSBL
-    # print("retrieving wsbl tasks...")
-    # get_wsbl_tasks()
-    #
-    # print("scraping wsbl players...")
-    # get_wsbl_players()
-
     print("done!")
+
+    # sleep for 5 mins (300 secs)
+    time.sleep(300)
+    print("done sleeping. should be restarting!")
 
     await channel.send("Updated!")
 
@@ -186,145 +184,147 @@ def update_db(collection, topic_num, task, names):
 
 
 def get_wsbl_tasks():
-    # activity check (only get the top one)
-    ac = "https://worldsimbasketball.jcink.net/index.php?showforum=5"
-
-    # point tasks (get all forum topics except intro PT for PBE)
-    pt = "https://worldsimbasketball.jcink.net/index.php?showforum=7"
-
-    get_tasks("wsbl", ac, pt)
     return
+    # activity check (only get the top one)
+    # ac = "https://worldsimbasketball.jcink.net/index.php?showforum=5"
+    #
+    # # point tasks (get all forum topics except intro PT for PBE)
+    # pt = "https://worldsimbasketball.jcink.net/index.php?showforum=7"
+    #
+    # get_tasks("wsbl", ac, pt)
+    # return
 
 
 # TODO: scrape WSBL players
 def get_wsbl_players():
-    teams = {}
-
-    # Free Agents
-    url_free_agents = "https://worldsimbasketball.jcink.net/index.php?showforum=28"
-    teams.__setitem__(url_free_agents, "Free Agents")
-
-    # Retired Players
-    url_retired_players = "https://worldsimbasketball.jcink.net/index.php?showforum=29"
-    teams.__setitem__(url_retired_players, "Retired")
-
-    # Draftees
-    url_draftees_pg = "https://worldsimbasketball.jcink.net/index.php?showforum=96"
-    url_draftees_sg = "https://worldsimbasketball.jcink.net/index.php?showforum=97"
-    url_draftees_sf = "https://worldsimbasketball.jcink.net/index.php?showforum=98"
-    url_draftees_pf = "https://worldsimbasketball.jcink.net/index.php?showforum=99"
-    url_draftees_c = "https://worldsimbasketball.jcink.net/index.php?showforum=100"
-    teams.__setitem__(url_draftees_pg, "Draftees")
-    teams.__setitem__(url_draftees_sg, "Draftees")
-    teams.__setitem__(url_draftees_sf, "Draftees")
-    teams.__setitem__(url_draftees_pf, "Draftees")
-    teams.__setitem__(url_draftees_c, "Draftees")
-
-    # Waivers
-    url_waviers = "https://worldsimbasketball.jcink.net/index.php?showforum=107"
-    teams.__setitem__(url_waviers, "Waivers")
-
-    # Detroit Generals
-    url_detroit = "https://worldsimbasketball.jcink.net/index.php?showforum=18"
-    teams.__setitem__(url_detroit, "Detroit Generals")
-
-    # Indiana Haymakers
-    url_indiana = "https://worldsimbasketball.jcink.net/index.php?showforum=36"
-    teams.__setitem__(url_indiana, "Indiana Haymakers")
-
-    # Lake Superior
-    url_lake_superior = "https://worldsimbasketball.jcink.net/index.php?showforum=90"
-    teams.__setitem__(url_lake_superior, "Lake Superior Raiders")
-
-    # Mud City
-    url_mud_city = "https://worldsimbasketball.jcink.net/index.php?showforum=67"
-    teams.__setitem__(url_mud_city, "Mud City Wolves")
-
-    # New Jersey
-    url_new_jersey = "https://worldsimbasketball.jcink.net/index.php?showforum=37"
-    teams.__setitem__(url_new_jersey, "New Jersey Blackjacks")
-
-    # New York
-    url_new_york = "https://worldsimbasketball.jcink.net/index.php?showforum=38"
-    teams.__setitem__(url_new_york, "New York Imperials")
-
-    # Seattle
-    url_seattle = "https://worldsimbasketball.jcink.net/index.php?showforum=69"
-    teams.__setitem__(url_seattle, "Seattle Orcas")
-
-    # Vancouver
-    url_vancouver = "https://worldsimbasketball.jcink.net/index.php?showforum=66"
-    teams.__setitem__(url_vancouver, "Vancouver Venom")
-
-    # Austin
-    url_austin = "https://worldsimbasketball.jcink.net/index.php?showforum=51"
-    teams.__setitem__(url_austin, "Austin Vaqueros")
-
-    # Carolina
-    url_carolina = "https://worldsimbasketball.jcink.net/index.php?showforum=15"
-    teams.__setitem__(url_carolina, "Carolina Reapers")
-
-    # Mexico City
-    url_mexico_city = "https://worldsimbasketball.jcink.net/index.php?showforum=68"
-    teams.__setitem__(url_mexico_city, "Mexico City Quetzals")
-
-    # Panama
-    url_panama = "https://worldsimbasketball.jcink.net/index.php?showforum=89"
-    teams.__setitem__(url_panama, "Panama Anteaters")
-
-    # Puerto Rico
-    url_puerto_rico = "https://worldsimbasketball.jcink.net/index.php?showforum=88"
-    teams.__setitem__(url_puerto_rico, "Puerto Rico Passion")
-
-    # Singapore
-    url_singapore = "https://worldsimbasketball.jcink.net/index.php?showforum=91"
-    teams.__setitem__(url_singapore, "Singapore Sun Bears")
-
-    # South Beach
-    url_south_beach = "https://worldsimbasketball.jcink.net/index.php?showforum=39"
-    teams.__setitem__(url_south_beach, "South Beach Sting")
-
-    # Vegas
-    url_vegas = "https://worldsimbasketball.jcink.net/index.php?showforum=53"
-    teams.__setitem__(url_vegas, "Vegas Volts")
-
-    # Philadelphia
-    url_philadelphia = "https://worldsimbasketball.jcink.net/index.php?showforum=131"
-    teams.__setitem__(url_philadelphia, "Philadelphia Lightning")
-
-    # Edinburgh
-    url_edinburgh = "https://worldsimbasketball.jcink.net/index.php?showforum=125"
-    teams.__setitem__(url_edinburgh, "Edinburgh Golden Unicorns")
-
-    # Music City (Formerly Frankfurt Falkens 2001-2022)
-    url_music_city = "https://worldsimbasketball.jcink.net/index.php?showforum=122"
-    teams.__setitem__(url_music_city, "Music City Mountaineers")
-
-    # Madrid
-    url_madrid = "https://worldsimbasketball.jcink.net/index.php?showforum=128"
-    teams.__setitem__(url_madrid, "Madrid Matadors")
-
-    # Columbus Cosmos (Formerly Ontario Legends 2001-2022)
-    url_columbus = "https://worldsimbasketball.jcink.net/index.php?showforum=119"
-    teams.__setitem__(url_columbus, "Columbus Cosmos")
-
-    # San Diego
-    url_san_diego = "https://worldsimbasketball.jcink.net/index.php?showforum=116"
-    teams.__setitem__(url_san_diego, "San Diego Admirals")
-
-    url_list = teams.keys()
-
-    players = []
-
-    for url in url_list:
-        temp_players = parse_player_list(url, teams.get(url))
-
-        for t in temp_players:
-            players.append(t)
-
-    post_to_db(players)
-
     return
+    # teams = {}
+    #
+    # # Free Agents
+    # url_free_agents = "https://worldsimbasketball.jcink.net/index.php?showforum=28"
+    # teams.__setitem__(url_free_agents, "Free Agents")
+    #
+    # # Retired Players
+    # url_retired_players = "https://worldsimbasketball.jcink.net/index.php?showforum=29"
+    # teams.__setitem__(url_retired_players, "Retired")
+    #
+    # # Draftees
+    # url_draftees_pg = "https://worldsimbasketball.jcink.net/index.php?showforum=96"
+    # url_draftees_sg = "https://worldsimbasketball.jcink.net/index.php?showforum=97"
+    # url_draftees_sf = "https://worldsimbasketball.jcink.net/index.php?showforum=98"
+    # url_draftees_pf = "https://worldsimbasketball.jcink.net/index.php?showforum=99"
+    # url_draftees_c = "https://worldsimbasketball.jcink.net/index.php?showforum=100"
+    # teams.__setitem__(url_draftees_pg, "Draftees")
+    # teams.__setitem__(url_draftees_sg, "Draftees")
+    # teams.__setitem__(url_draftees_sf, "Draftees")
+    # teams.__setitem__(url_draftees_pf, "Draftees")
+    # teams.__setitem__(url_draftees_c, "Draftees")
+    #
+    # # Waivers
+    # url_waviers = "https://worldsimbasketball.jcink.net/index.php?showforum=107"
+    # teams.__setitem__(url_waviers, "Waivers")
+    #
+    # # Detroit Generals
+    # url_detroit = "https://worldsimbasketball.jcink.net/index.php?showforum=18"
+    # teams.__setitem__(url_detroit, "Detroit Generals")
+    #
+    # # Indiana Haymakers
+    # url_indiana = "https://worldsimbasketball.jcink.net/index.php?showforum=36"
+    # teams.__setitem__(url_indiana, "Indiana Haymakers")
+    #
+    # # Lake Superior
+    # url_lake_superior = "https://worldsimbasketball.jcink.net/index.php?showforum=90"
+    # teams.__setitem__(url_lake_superior, "Lake Superior Raiders")
+    #
+    # # Mud City
+    # url_mud_city = "https://worldsimbasketball.jcink.net/index.php?showforum=67"
+    # teams.__setitem__(url_mud_city, "Mud City Wolves")
+    #
+    # # New Jersey
+    # url_new_jersey = "https://worldsimbasketball.jcink.net/index.php?showforum=37"
+    # teams.__setitem__(url_new_jersey, "New Jersey Blackjacks")
+    #
+    # # New York
+    # url_new_york = "https://worldsimbasketball.jcink.net/index.php?showforum=38"
+    # teams.__setitem__(url_new_york, "New York Imperials")
+    #
+    # # Seattle
+    # url_seattle = "https://worldsimbasketball.jcink.net/index.php?showforum=69"
+    # teams.__setitem__(url_seattle, "Seattle Orcas")
+    #
+    # # Vancouver
+    # url_vancouver = "https://worldsimbasketball.jcink.net/index.php?showforum=66"
+    # teams.__setitem__(url_vancouver, "Vancouver Venom")
+    #
+    # # Austin
+    # url_austin = "https://worldsimbasketball.jcink.net/index.php?showforum=51"
+    # teams.__setitem__(url_austin, "Austin Vaqueros")
+    #
+    # # Carolina
+    # url_carolina = "https://worldsimbasketball.jcink.net/index.php?showforum=15"
+    # teams.__setitem__(url_carolina, "Carolina Reapers")
+    #
+    # # Mexico City
+    # url_mexico_city = "https://worldsimbasketball.jcink.net/index.php?showforum=68"
+    # teams.__setitem__(url_mexico_city, "Mexico City Quetzals")
+    #
+    # # Panama
+    # url_panama = "https://worldsimbasketball.jcink.net/index.php?showforum=89"
+    # teams.__setitem__(url_panama, "Panama Anteaters")
+    #
+    # # Puerto Rico
+    # url_puerto_rico = "https://worldsimbasketball.jcink.net/index.php?showforum=88"
+    # teams.__setitem__(url_puerto_rico, "Puerto Rico Passion")
+    #
+    # # Singapore
+    # url_singapore = "https://worldsimbasketball.jcink.net/index.php?showforum=91"
+    # teams.__setitem__(url_singapore, "Singapore Sun Bears")
+    #
+    # # South Beach
+    # url_south_beach = "https://worldsimbasketball.jcink.net/index.php?showforum=39"
+    # teams.__setitem__(url_south_beach, "South Beach Sting")
+    #
+    # # Vegas
+    # url_vegas = "https://worldsimbasketball.jcink.net/index.php?showforum=53"
+    # teams.__setitem__(url_vegas, "Vegas Volts")
+    #
+    # # Philadelphia
+    # url_philadelphia = "https://worldsimbasketball.jcink.net/index.php?showforum=131"
+    # teams.__setitem__(url_philadelphia, "Philadelphia Lightning")
+    #
+    # # Edinburgh
+    # url_edinburgh = "https://worldsimbasketball.jcink.net/index.php?showforum=125"
+    # teams.__setitem__(url_edinburgh, "Edinburgh Golden Unicorns")
+    #
+    # # Music City (Formerly Frankfurt Falkens 2001-2022)
+    # url_music_city = "https://worldsimbasketball.jcink.net/index.php?showforum=122"
+    # teams.__setitem__(url_music_city, "Music City Mountaineers")
+    #
+    # # Madrid
+    # url_madrid = "https://worldsimbasketball.jcink.net/index.php?showforum=128"
+    # teams.__setitem__(url_madrid, "Madrid Matadors")
+    #
+    # # Columbus Cosmos (Formerly Ontario Legends 2001-2022)
+    # url_columbus = "https://worldsimbasketball.jcink.net/index.php?showforum=119"
+    # teams.__setitem__(url_columbus, "Columbus Cosmos")
+    #
+    # # San Diego
+    # url_san_diego = "https://worldsimbasketball.jcink.net/index.php?showforum=116"
+    # teams.__setitem__(url_san_diego, "San Diego Admirals")
+    #
+    # url_list = teams.keys()
+    #
+    # players = []
+    #
+    # for url in url_list:
+    #     temp_players = parse_player_list(url, teams.get(url))
+    #
+    #     for t in temp_players:
+    #         players.append(t)
+    #
+    # post_to_db(players)
+    #
+    # return
 
 
 # return the links to all players
