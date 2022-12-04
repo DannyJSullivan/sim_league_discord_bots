@@ -39,6 +39,7 @@ mongo_uri = os.getenv("MONGO_URI")
 client = pymongo.MongoClient(mongo_uri)
 pbe_db = client.pbe
 pbe_task_collection = pbe_db.tasks
+pbe_player_collection = pbe_db.players
 
 wsbl_db = client.wsbl
 wsbl_task_collection = wsbl_db.tasks
@@ -52,21 +53,26 @@ token = os.getenv("SIM_LEAGUE_SCRAPER_DISCORD_TOKEN")
 client = discord.Client()
 
 
-@tasks.loop(minutes=5.0, count=None)
+@tasks.loop(minutes=10.0, count=None)
 async def update_sim_league_stuff():
     channel_id = os.getenv("STATUS_CHANNEL_ID")
     channel = client.get_channel(id=int(channel_id))
 
     await channel.send("Updating sim league info...")
 
+    # TODO: uncomment this...
     print("retrieving pbe tasks...")
     get_pbe_tasks()
+    print("done getting tasks!")
 
-    print("done!")
+    print("retrieving pbe players...")
+    get_pbe_players()
+    print("done getting players!")
 
+    # TODO: see if this needs to be added again...
     # sleep for 5 mins (300 secs)
-    time.sleep(300)
-    print("done sleeping. should be restarting!")
+    # time.sleep(300)
+    # print("done sleeping. should be restarting!")
 
     await channel.send("Updated!")
 
@@ -181,6 +187,487 @@ def update_db(collection, topic_num, task, names):
             "task": task,
             "names": names
         })
+
+
+def get_pbe_players():
+    # teams
+    teams = []
+
+    # PBE
+    # Legends Conference East
+    buf = "https://probaseballexperience.jcink.net/index.php?showforum=248"
+    nyv = "https://probaseballexperience.jcink.net/index.php?showforum=65"
+    obx = "https://probaseballexperience.jcink.net/index.php?showforum=71"
+    prv = "https://probaseballexperience.jcink.net/index.php?showforum=59"
+    teams.append(buf)
+    teams.append(nyv)
+    teams.append(obx)
+    teams.append(prv)
+
+    # Legends Conference West
+    boi = "https://probaseballexperience.jcink.net/index.php?showforum=163"
+    mau = "https://probaseballexperience.jcink.net/index.php?showforum=237"
+    sas = "https://probaseballexperience.jcink.net/index.php?showforum=62"
+    van = "https://probaseballexperience.jcink.net/index.php?showforum=68"
+    teams.append(boi)
+    teams.append(mau)
+    teams.append(sas)
+    teams.append(van)
+
+    # Champions Conference East
+    det = "https://probaseballexperience.jcink.net/index.php?showforum=214"
+    ind = "https://probaseballexperience.jcink.net/index.php?showforum=234"
+    lun = "https://probaseballexperience.jcink.net/index.php?showforum=160"
+    nas = "https://probaseballexperience.jcink.net/index.php?showforum=177"
+    teams.append(det)
+    teams.append(ind)
+    teams.append(lun)
+    teams.append(nas)
+
+    # Champions Conference West
+    cun = "https://probaseballexperience.jcink.net/index.php?showforum=175"
+    dvs = "https://probaseballexperience.jcink.net/index.php?showforum=74"
+    nola = "https://probaseballexperience.jcink.net/index.php?showforum=212"
+    sea = "https://probaseballexperience.jcink.net/index.php?showforum=253"
+    teams.append(cun)
+    teams.append(dvs)
+    teams.append(nola)
+    teams.append(sea)
+
+    # MiLPBE
+    # East
+    chi = "https://probaseballexperience.jcink.net/index.php?showforum=204"
+    fla = "https://probaseballexperience.jcink.net/index.php?showforum=152"
+    lou = "https://probaseballexperience.jcink.net/index.php?showforum=245"
+    prr = "https://probaseballexperience.jcink.net/index.php?showforum=191"
+    scs = "https://probaseballexperience.jcink.net/index.php?showforum=138"
+    teams.append(chi)
+    teams.append(fla)
+    teams.append(lou)
+    teams.append(prr)
+    teams.append(scs)
+
+    # West
+    ama = "https://probaseballexperience.jcink.net/index.php?showforum=155"
+    anc = "https://probaseballexperience.jcink.net/index.php?showforum=140"
+    bcb = "https://probaseballexperience.jcink.net/index.php?showforum=242"
+    cal = "https://probaseballexperience.jcink.net/index.php?showforum=206"
+    kck = "https://probaseballexperience.jcink.net/index.php?showforum=188"
+    teams.append(ama)
+    teams.append(anc)
+    teams.append(bcb)
+    teams.append(cal)
+    teams.append(kck)
+
+    # Unassigned Players
+    draftees = "https://probaseballexperience.jcink.net/index.php?showforum=181"
+    free_agents = "https://probaseballexperience.jcink.net/index.php?showforum=7"
+    retired = "https://probaseballexperience.jcink.net/index.php?showforum=10"
+    teams.append(draftees)
+    teams.append(free_agents)
+    # TODO: make some conditional here, only run it more if there's people who didn't exist before... so basically
+    #  check and see if the person was retired before, or maybe the last modified date?
+    teams.append(retired)
+
+    for team in teams:
+        scrape_roster(team)
+
+    print("finished scraping players!")
+
+    return
+
+
+def scrape_roster(url):
+    print("parsing through team at url: " + url)
+
+    page_content = requests.get(url).text
+    soup = BeautifulSoup(page_content, "html.parser")
+
+    pages = soup.find("span", attrs={"class": "pagination_pagetxt"})
+
+    page_count = 1
+
+    if pages is not None:
+        pages = pages.text
+        page_count = re.sub("Pages: \\(", "", pages)
+        page_count = re.sub("\\)", "", page_count)
+        page_count = int(page_count)
+
+    players = []
+
+    # go through each page of posts
+    for x in range(1, page_count + 1):
+        new_page = url + "&st=" + str((x - 1) * 15)
+        new_page_content = requests.get(new_page).text
+        new_soup = BeautifulSoup(new_page_content, "html.parser")
+        player_pages = new_soup.findAll("td", attrs={"class": "row4"})
+
+        # go through results, get links to updates
+        for p in range(len(player_pages)):
+            if player_pages[p].find("a") is not None \
+                    and " - " in player_pages[p].find("a").text:
+                if "probaseballexperience.jcink.net/" in player_pages[p].find("a").get("href"):
+                    players.append(player_pages[p].find("a").get("href"))
+
+    player_results = []
+
+    for player in players:
+        p = scrape_pbe_player(player)
+        if p is not None:
+            player_results.append(p)
+
+    print("saving players...")
+    save_players(player_results)
+
+    return
+
+
+def scrape_pbe_player(url):
+    # TODO: add try catch here so we can finish scraping even if errors...
+    # TODO: for info converting to int in first section, default to zero if no empty string
+    try:
+        print("\tupdating player at: " + url)
+        player = {}
+
+        page_content = requests.get(url).text
+        soup = BeautifulSoup(page_content, "html.parser")
+
+        tpe = soup.find("span", attrs={"class": "topic-desc"})
+
+        player_attributes = soup.find("div", attrs={"class": "postcolor"})
+
+        edited = soup.find("span", attrs={"class": "edit"})
+
+        season = soup.find("span", attrs={"class": "topic-title"})
+
+        user_url = soup.find("span", attrs={"class": "normalname"})
+
+        navstrip = soup.find("div", attrs={"id": "navstrip"})
+
+        team = navstrip.findAll("a")[2].text
+
+        league_full = navstrip.findAll("a")[1].text.replace("Clubhouses", "").strip()
+
+        league = ""
+        conference = ""
+        division = ""
+
+        player.update({'player_forum_url': url})
+        player.update({'player_forum_code': url.split("showtopic=")[1]})
+        if "Unassigned" not in team:
+            player.update({'team': team})
+        player.update({'forum_name': user_url.text})
+
+        if "MiLPBE" in league_full:
+            player.update({'league': 'MiLPBE'})
+            player.update({'conference': league_full.split(" ")[1]})
+            player.update({'division': ''})
+        if "Unassigned" in team:
+            player.update({'league': navstrip.findAll("a")[3].text.replace("Players", "")})
+            player.update({'conference': ''})
+            player.update({'division': ''})
+        else:
+            player.update({'league': 'PBE'})
+            player.update({'conference': league_full.split(" ")[0]})
+            player.update({'division': league_full.split(" ")[2]})
+
+        if season is not None:
+            s = season.text
+            if "[GM" in season.text or "(GM" in season.text or "gm bot" in season.text.lower():
+                return
+            player.update({'season': s[s.find('[') + 1:s.find(']')]})
+
+        if tpe is not None:
+            player.update({'tpe': int(tpe.text.replace(", TPE:", "").strip())})
+
+        if user_url is not None:
+            player.update({'user_url': user_url.find("a").get("href")})
+            player.update({'user_forum_code': player.get('user_url').split("showuser=")[1]})
+
+        if edited is not None:
+            split = edited.text.split(":")
+            d = split[1]
+
+            final_date = ""
+
+            if "Yesterday" in d:
+                final_date = datetime.date.today() - datetime.timedelta(days=1)
+            elif "Today" in d or "minutes ago" in d or "seconds ago" in d:
+                final_date = datetime.date.today()
+            else:
+                split2 = d.split(",")
+                d2 = split2[0].strip()
+                split3 = d2.split(" ")
+                final_formatted = split3[0] + " "
+                if len(split3[1]) < 2:
+                    final_formatted += "0" + split3[1] + " "
+                else:
+                    final_formatted += split3[1] + " "
+                final_formatted += split3[2]
+
+                final_date = datetime.datetime.strptime(final_formatted, "%b %d %Y").date()
+
+            if final_date == "":
+                player.update({'last_updated': final_date.strftime("N/A")})
+            else:
+                player.update({'last_updated': final_date.strftime("%m/%d/%Y")})
+        else:
+            player.update({'last_updated': "N/A"})
+
+        # TODO: debug line
+        # if player.get('forum_name') == "CoreyMilhouse":
+        #     print('STOP!')
+
+        if player_attributes is not None:
+            attrs = player_attributes.findAll(text=True)
+
+            counter = 0
+
+            # assign info
+            for x in attrs:
+                value = ""
+                value2 = ""
+                if ":" in x:
+                    if counter + 1 < len(attrs):
+                        value = attrs[counter + 1].strip()
+                    else:
+                        value = attrs[counter].strip()
+                    split_size = len(x.split(":"))
+                    value2 = x.split(":")[split_size - 1].strip()
+
+                    # if "Username:" in x:
+                    #     player.update({'forum_name': value})
+
+                    if "Player Name:" in x:
+                        player.update({'player_name': value})
+                        player.update({'normalized_name': get_normalized_name(value)})
+
+                    elif "First Name:" in x:
+                        player.update({'player_name': value})
+
+                    elif "Last Name:" in x:
+                        name = player.get('player_name') + " " + value
+                        player.update({'player_name': name})
+                        player.update({'normalized_name': get_normalized_name(name)})
+
+                    elif "Name:" in x:
+                        player.update({'player_name': value})
+                        player.update({'normalized_name': get_normalized_name(value)})
+
+                    elif "Number:" in x:
+                        if value != "" and value.isdigit():
+                            player.update({'number': int(value)})
+                        else:
+                            player.update({'number': 0})
+
+                    elif "Position:" in x:
+                        player.update({'position': value})
+
+                    elif "College:" in x:
+                        player.update({'college': value})
+
+                    elif "Throws:" in x:
+                        player.update({'throws': value})
+
+                    elif "Bats:" in x:
+                        player.update({'bats': value})
+
+                    elif "Recruited By:" in x:
+                        player.update({'recruited_by': value})
+
+                    elif "Height:" in x:
+                        player.update({'height': value})
+
+                    elif "Weight:" in x:
+                        player.update({'weight': value})
+
+                    elif "Birthplace:" in x:
+                        player.update({'birthplace': value})
+
+                    elif "Player Render:" in x:
+                        player.update({'player_render': value})
+
+                    elif "Discord name:" in x:
+                        player.update({'discord': value})
+
+                    elif "Hitting:" in x:
+                        player.update({'hitting': value})
+
+                    elif "Bank:" in x:
+                        if value.isdigit():
+                            player.update({'tpe_banked': int(value)})
+                        else:
+                            player.update({'tpe_banked': int(value2)})
+
+                    elif "Archetype" in x:
+                        if "(" in value:
+                            player.update({'archetype': value.split("(")[0].strip()})
+                        else:
+                            player.update({'archetype': value})
+
+                    elif "BABIP vs LHP" in x:
+                        player.update({'babip_lhp': int(value2)})
+
+                    elif "BABIP vs RHP" in x:
+                        player.update({'babip_rhp': int(value2)})
+
+                    elif "Avoid K's vs LHP" in x:
+                        player.update({'ak_lhp': int(value2)})
+
+                    elif "Avoid K's vs RHP" in x:
+                        player.update({'ak_rhp': int(value2)})
+
+                    elif "Gap vs LHP" in x:
+                        player.update({'gap_lhp': int(value2)})
+
+                    elif "Gap vs RHP" in x:
+                        player.update({'gap_rhp': int(value2)})
+
+                    elif "Power vs LHP" in x:
+                        player.update({'power_lhp': int(value2)})
+
+                    elif "Power vs RHP" in x:
+                        player.update({'power_rhp': int(value2)})
+
+                    elif "Eye/Patience vs LHP" in x:
+                        player.update({'ep_lhp': int(value2)})
+
+                    elif "Eye/Patience vs RHP" in x:
+                        player.update({'ep_rhp': int(value2)})
+
+                    elif "Speed (Base & Run)" in x:
+                        player.update({'speed': int(value2)})
+
+                    elif "Stealing Ability" in x:
+                        player.update({'steal': int(value2)})
+
+                    elif "Bunting (Both)" in x:
+                        player.update({'bunt': int(value2)})
+
+                    elif "Fielding Range" in x:
+                        player.update({'field_range': int(value2)})
+
+                    elif "Fielding Error" in x:
+                        player.update({'field_error': int(value2)})
+
+                    elif "Fielding/Catching Arm" in x:
+                        player.update({'arm': int(value2)})
+
+                    elif "Double Play" in x:
+                        player.update({'double_play': int(value2)})
+
+                    elif "Catcher Abilit:" in x:
+                        player.update({'c_ability': int(value2)})
+
+                    elif "1st Position" in x:
+                        player.update({'pos_1': value2})
+
+                    elif "2nd Position" in x:
+                        player.update({'pos_2': value2})
+
+                    elif "3rd Position" in x:
+                        player.update({'pos_3': value2})
+
+                    elif "Velocity" in x:
+                        player.update({'velo': value2})
+
+                    elif "Movement vs LHB" in x or "Movement vs. LHB" in x:
+                        player.update({'mov_lhb': int(value2)})
+
+                    elif "Movement vs RHB" in x or "Movement vs. RHB" in x:
+                        player.update({'mov_rhb': int(value2)})
+
+                    elif "Control vs LHB" in x or "Control vs. LHB" in x:
+                        player.update({'con_lhb': int(value2)})
+
+                    elif "Control vs RHB" in x or "Control vs. RHB" in x:
+                        player.update({'con_rhb': int(value2)})
+
+                    elif "Stamina" in x:
+                        player.update({'stamina': int(value2)})
+
+                    elif "Holding Runners" in x:
+                        player.update({'hold_runners': int(value2)})
+
+                    elif "GB%" in x:
+                        player.update({'gb_pct': int(value2)})
+
+                    elif "Fastball:" in x:
+                        player.update({'fastball': int(value2)})
+
+                    elif "Sinker:" in x:
+                        player.update({'sinker': int(value2)})
+
+                    elif "Cutter:" in x:
+                        player.update({'cutter': int(value2)})
+
+                    elif "Curveball:" in x:
+                        player.update({'curveball': int(value2)})
+
+                    elif "Slider:" in x:
+                        player.update({'slider': int(value2)})
+
+                    elif "Changeup:" in x:
+                        player.update({'changeup': int(value2)})
+
+                    elif "Splitter:" in x:
+                        player.update({'splitter': int(value2)})
+
+                    elif "Forkball:" in x:
+                        player.update({'forkball': int(value2)})
+
+                    elif "Circle Change:" in x:
+                        player.update({'circle_change': int(value2)})
+
+                    elif "Screwball:" in x:
+                        player.update({'screwball': int(value2)})
+
+                    elif "Knuckle Curve:" in x:
+                        player.update({'knuckle_curve': int(value2)})
+
+                    elif "Knuckleball:" in x:
+                        player.update({'knuckleball': int(value2)})
+
+                counter = counter + 1
+
+        return player
+    except Exception as e:
+        print("Error occurred scraping player at url: " + url)
+        print(str(e))
+        return None
+
+
+def save_players(players):
+    for player in players:
+        try:
+            exists = False
+            doc_id = ""
+            cursor = pbe_player_collection.find({"player_forum_code": player.get('player_forum_code'),
+                                                 "user_forum_code": player.get('user_forum_code')})
+            for document in cursor:
+                exists = True
+                doc_id = document.get('_id')
+                break
+
+            if exists:
+                try:
+                    pbe_player_collection.find_one_and_update({"_id": ObjectId(doc_id)}, {"$set": player})
+                    print("Updated user: " + player.get('forum_name') + ", " + player.get('player_name'))
+                except Exception as e:
+                    print("Error occurred updating player into the database: " + str(e))
+                    print("Player: " + str(player))
+            else:
+                try:
+                    pbe_player_collection.insert_one(player)
+                    print("Inserted user: " + player.get('forum_name') + ", " + player.get('player_name'))
+                except Exception as e:
+                    print("Error occurred inserting player into the database: " + str(e))
+                    print("Player: " + str(player))
+
+        except Exception as e:
+            print("Error occurred retrieving players from the database: " + str(e))
+
+    return
 
 
 def get_wsbl_tasks():
