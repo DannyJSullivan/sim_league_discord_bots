@@ -363,7 +363,8 @@ def scrape_pbe_player(url):
             player.update({'conference': league_full.split(" ")[1]})
             player.update({'division': ''})
         if "Unassigned" in team:
-            player.update({'league': navstrip.findAll("a")[3].text.replace("Players", "").strip()})
+            player.update({'team': navstrip.findAll("a")[3].text.replace("Players", "").strip()})
+            player.update({'league': ''})
             player.update({'conference': ''})
             player.update({'division': ''})
         else:
