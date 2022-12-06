@@ -493,7 +493,7 @@ def scrape_pbe_player(url):
                     elif "Hitting:" in x:
                         player.update({'hitting': value})
 
-                    elif "Bank:" in x:
+                    elif "Bank:" in x or "Banked:" in x:
                         if value.isdigit():
                             player.update({'tpe_banked': int(value)})
                         else:
