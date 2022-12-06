@@ -326,7 +326,7 @@ def scrape_pbe_player(url):
     # TODO: add try catch here so we can finish scraping even if errors...
     # TODO: for info converting to int in first section, default to zero if no empty string
     try:
-        print("\tupdating player at: " + url)
+        # print("\tupdating player at: " + url)
         player = {}
 
         page_content = requests.get(url).text
@@ -652,14 +652,14 @@ def save_players(players):
             if exists:
                 try:
                     pbe_player_collection.find_one_and_update({"_id": ObjectId(doc_id)}, {"$set": player})
-                    print("Updated user: " + player.get('forum_name') + ", " + player.get('player_name'))
+                    # print("Updated user: " + player.get('forum_name') + ", " + player.get('player_name'))
                 except Exception as e:
                     print("Error occurred updating player into the database: " + str(e))
                     print("Player: " + str(player))
             else:
                 try:
                     pbe_player_collection.insert_one(player)
-                    print("Inserted user: " + player.get('forum_name') + ", " + player.get('player_name'))
+                    # print("Inserted user: " + player.get('forum_name') + ", " + player.get('player_name'))
                 except Exception as e:
                     print("Error occurred inserting player into the database: " + str(e))
                     print("Player: " + str(player))
