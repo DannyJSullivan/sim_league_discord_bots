@@ -232,54 +232,6 @@ def find_player_from_tpe_tracker(player_name):
         return resp
 
 
-    # tpe_tracker = 'http://pbe-tpe-tracker.herokuapp.com/players'
-    # pbe_topic_url = 'https://probaseballexperience.jcink.net/index.php?showtopic='
-    # page_content = requests.get(tpe_tracker).text
-    # soup = BeautifulSoup(page_content, "html.parser")
-    # table = soup.find("tbody")
-    # rows = table.findAll("tr")
-    #
-    # resp = {
-    #     "status": "FAILED"
-    # }
-    #
-    # for row in rows:
-    #     if resp.get("status") == "SUCCESS":
-    #         break
-    #
-    #     row_data = row.findAll("td")
-    #     for data in row_data:
-    #         try:
-    #             if handle_special_characters_ignore_case(data.text) == handle_special_characters_ignore_case(player_name):
-    #                 resp.__setitem__("status", "SUCCESS")
-    #                 resp.__setitem__("regression_season", row_data[0].text)
-    #                 resp.__setitem__("team", row_data[1].text)
-    #                 resp.__setitem__("name", row_data[2].text)
-    #                 resp.__setitem__("player_number", row_data[2].find("a").get("href").replace("/players/", ""))
-    #                 resp.__setitem__("pos", row_data[3].text)
-    #                 resp.__setitem__("tpe", row_data[4].text)
-    #                 resp.__setitem__("last_updated", row_data[5].text)
-    #                 break
-    #         except:
-    #             return resp
-    #
-    # if resp.get("status") == "SUCCESS":
-    #     page_content = requests.get(pbe_topic_url + resp.get("player_number")).text
-    #     soup = BeautifulSoup(page_content, "html.parser")
-    #     profile_url = soup.find("span", attrs={"class": "normalname"}).find("a").get("href")
-    #     resp.__setitem__("profile", profile_url)
-    #     page_content = requests.get(profile_url).text
-    #     soup = BeautifulSoup(page_content, "html.parser")
-    #     profile_stats = soup.find("div", attrs={"id": "profile-statistics"})
-    #
-    #     for stat in profile_stats:
-    #         if "Last Seen: " in stat.text:
-    #             resp.__setitem__("last_seen", stat.text.replace("Last Seen: ", "").strip())
-    #             return resp
-    #
-    # return resp
-
-
 def find_player_from_bank(forum_name):
     bank_sheet_id = "15OMqbS-8cA21JFdettLs6A0K4A1l4Vjls7031uAFAkc"
     bank_sheet_range = 'Shorrax Import Player Pool!A:H'
