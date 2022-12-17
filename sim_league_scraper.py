@@ -1153,7 +1153,7 @@ def get_normalized_name(name):
         if s.isalnum() or s == ' ':
             finalized_name = finalized_name + s
 
-    return unidecode(name)
+    return unidecode(finalized_name)
 
 
 def post_to_db(players):
