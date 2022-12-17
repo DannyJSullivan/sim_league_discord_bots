@@ -40,6 +40,7 @@ client = pymongo.MongoClient(mongo_uri)
 pbe_db = client.pbe
 pbe_task_collection = pbe_db.tasks
 pbe_player_collection = pbe_db.players
+pbe_bank_collection = pbe_db.bank
 
 wsbl_db = client.wsbl
 wsbl_task_collection = wsbl_db.tasks
@@ -68,6 +69,10 @@ async def update_sim_league_stuff():
     print("retrieving pbe players...")
     get_pbe_players()
     print("done getting players!")
+
+    print("scraping bank...")
+    scrape_bank()
+    print("done scraping bank!")
 
     # TODO: see if this needs to be added again...
     # sleep for 5 mins (300 secs)
@@ -667,6 +672,61 @@ def save_players(players):
 
         except Exception as e:
             print("Error occurred retrieving players from the database: " + str(e))
+
+    return
+
+
+def scrape_bank():
+    bank_sheet_id = "15OMqbS-8cA21JFdettLs6A0K4A1l4Vjls7031uAFAkc"
+    bank_sheet_range = 'Shorrax Import Player Pool!A:H'
+
+    key = json.loads(os.environ.get("GCP_KEY"))
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(key)
+
+    service = build('sheets', 'v4', credentials=credentials)
+
+    sheet = service.spreadsheets()
+    result = sheet.values().get(spreadsheetId=bank_sheet_id,
+                                range=bank_sheet_range).execute()
+    values = result.get('values', [])
+
+    for row in values:
+        if row[0] != "Team Name":
+            try:
+                account = {}
+                account.update({'username': row[1]})
+                account.update({'player_name': row[2]})
+                account.update({'balance': row[4]})
+                save_bank_account(account)
+            except Exception as ex:
+                print("Error when scraping the bank...: ", ex)
+
+    return
+
+
+def save_bank_account(account):
+    try:
+        exists = False
+        doc_id = ""
+        cursor = pbe_bank_collection.find({"username": account.get('username')})
+        for document in cursor:
+            exists = True
+            doc_id = document.get('_id')
+            break
+
+        if exists:
+            try:
+                pbe_bank_collection.find_one_and_update({"_id": ObjectId(doc_id)}, {"$set": account})
+            except Exception as e:
+                print("Error occurred updating bank account into the database: " + str(e))
+        else:
+            try:
+                pbe_bank_collection.insert_one(account)
+            except Exception as e:
+                print("Error occurred updating bank account into the database: " + str(e))
+
+    except Exception as e:
+        print("Error occurred updating bank account into the database: " + str(e))
 
     return
 
