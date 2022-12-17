@@ -362,7 +362,7 @@ def scrape_pbe_player(url):
             player.update({'league': 'MiLPBE'})
             player.update({'conference': league_full.split(" ")[1]})
             player.update({'division': ''})
-        if "Unassigned" in team:
+        elif "Unassigned" in team:
             player.update({'team': navstrip.findAll("a")[3].text.replace("Players", "").strip()})
             player.update({'league': ''})
             player.update({'conference': ''})
@@ -1148,6 +1148,11 @@ def get_index_name(name):
 
 
 def get_normalized_name(name):
+    finalized_name = ""
+    for s in name:
+        if s.isalnum() or s == ' ':
+            finalized_name = finalized_name + s
+
     return unidecode(name)
 
 
