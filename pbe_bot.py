@@ -37,6 +37,7 @@ db = client.pbe
 discord_collection = db.discord
 task_collection = db.tasks
 player_collection = db.players
+bank_collection = db.bank
 
 # TODO: add media to transactions log
 # TODO: add tpe ranking for overall and for regression class
@@ -51,7 +52,7 @@ bot = commands.Bot(command_prefix=prefix)
 # Claim user
 
 
-@bot.command(name='claim', help='Claim your forum username or player name')
+@bot.command(name='claim', help='Claim your forum username')
 async def claim_user(ctx):
     doc_id = ""
     exists = False
@@ -63,57 +64,24 @@ async def claim_user(ctx):
         break
 
     name = str(ctx.message.content).replace("!claim ", "").strip()
-    forum_name = None
-    player_name = find_player_from_bank(name)
+    player = get_active_player_by_forum_name(name)
 
-    # if player name is none, that means we could not find the forum name, so try and see if it's a player name
-    if player_name is None:
-        forum_name = find_player_from_bank_by_player_name(name)
-        player_name = name
-    else:
-        forum_name = name
-        player_name = find_player_from_bank(name)
-
-    result = find_player_from_tpe_tracker(player_name)
-
-    got_from_tpe_tracker = False
-
-    if result.get("status") == "SUCCESS":
-        got_from_tpe_tracker = True
-
-    if got_from_tpe_tracker:
+    if player is not None:
         if exists:
             discord_collection.find_one_and_update({"_id": ObjectId(doc_id)},
                                                    {
                                                        "$set": {
                                                            "discord": str(ctx.message.author),
-                                                           "forum_name": forum_name,
-                                                           "regression_season": result.get("regression_season"),
-                                                           "team": result.get("team"),
-                                                           "player_name": player_name,
-                                                           "pos": result.get("pos"),
-                                                           "tpe": result.get("tpe"),
-                                                           "last_updated": result.get("last_updated"),
-                                                           "player_number": result.get("player_number"),
-                                                           "profile": result.get("profile"),
-                                                           "last_seen": result.get("last_seen")
+                                                           "forum_name": player['forum_name'],
+                                                           "player_name": player['player_name']
                                                        }
                                                    })
             await ctx.send("Updated forum username!")
         else:
             discord_collection.insert_one({
                 "discord": str(ctx.message.author),
-                "forum_name": forum_name,
-                "regression_season": result.get("regression_season"),
-                "team": result.get("team"),
-                "player_name": player_name,
-                "tpe_tracker_link": result.get("tpe_tracker_link"),
-                "pos": result.get("pos"),
-                "tpe": result.get("tpe"),
-                "last_updated": result.get("last_updated"),
-                "player_number": result.get("player_number"),
-                "profile": result.get("profile"),
-                "last_seen": result.get("last_seen")
+                "forum_name": player['forum_name'],
+                "player_name": player['player_name']
             })
             await ctx.send("Retrieved all user information successfully!")
     else:
@@ -122,14 +90,14 @@ async def claim_user(ctx):
                                                    {
                                                        "$set": {
                                                            "discord": str(ctx.message.author),
-                                                           "forum_name": forum_name
+                                                           "forum_name": player['forum_name']
                                                        }
                                                    })
             await ctx.send("Updated forum username!")
         else:
             discord_collection.insert_one({
                 "discord": str(ctx.message.author),
-                "forum_name": forum_name,
+                "forum_name": player['forum_name'],
             })
             await ctx.send("Could not find player from the TPE Tracker! If your player is new, you should be added to "
                            "the tracker soon and all your information will be available. If your player name has "
@@ -204,12 +172,13 @@ def find_player_from_tpe_tracker(player_name):
 
     players = player_collection.find({'player_name': player_name})
 
-    if players.batch_size == 0:
-        players = player_collection.find({'normalized_name': player_name})
+    if players.retrieved == 0:
+        players = player_collection.find({'normalized_name': get_normalized_name(player_name)})
 
-    if players.batch_size == 0:
+    if players.retrieved == 0:
         return resp
     else:
+        player = players[0]
         resp.__setitem__("status", "SUCCESS")
         resp.__setitem__("regression_season", players[0]['season'])
         resp.__setitem__("team", players[0]['team'])
@@ -230,6 +199,17 @@ def find_player_from_tpe_tracker(player_name):
                 return resp
 
         return resp
+
+
+def get_active_player_by_forum_name(name):
+    players = player_collection.find({"forum_name": re.compile(str(name), re.IGNORECASE)})
+
+    player = None
+    for p in players:
+        if p.get("team") != "Retired":
+            player = p
+
+    return player
 
 
 def find_player_from_bank(forum_name):
@@ -320,16 +300,21 @@ def get_all_bank_accounts():
 
 def get_user_info(name, is_discord_name):
     if is_discord_name:
-        user_info = discord_collection.find_one({"discord": name})
+        discord_info = discord_collection.find_one({"discord": name})
+        user_info = get_active_player_by_forum_name(discord_info['forum_name'])
         if user_info is not None and user_info['forum_name'] is not None:
             return get_user_overview(user_info, False)
     else:
         # try seeing if the user info exists first
-        user_info = discord_collection.find_one({"forum_name": name})
+        user_info = get_active_player_by_forum_name(name)
         if user_info is not None and user_info['forum_name'] is not None:
             return get_user_overview(user_info, False)
 
-        user_info = discord_collection.find_one({"player_name": name})
+        user_info = player_collection.find_one({"player_name": name})
+        if user_info is not None and user_info['forum_name'] is not None:
+            return get_user_overview(user_info, False)
+
+        user_info = player_collection.find_one({"normalized_name": get_normalized_name(name)})
         if user_info is not None and user_info['forum_name'] is not None:
             return get_user_overview(user_info, False)
 
@@ -341,60 +326,21 @@ def get_user_info(name, is_discord_name):
 
 
 def get_user_overview(user_info, could_not_find):
-    # is forum name is true if all lookups fail
-    if could_not_find:
-        player_name = find_player_from_bank(user_info)
+    balance = bank_collection.find_one({"username": user_info["forum_name"]})['balance']
+    last_seen = get_last_seen(user_info['user_url'])
 
-        # if player name is none, that means we could not find the forum name, so try and see if it's a player name
-        if player_name is None:
-            forum_name = find_player_from_bank_by_player_name(user_info)
-            player_name = user_info
-        else:
-            forum_name = user_info
-            player_name = handle_special_characters(find_player_from_bank(user_info))
-
-        balance = lookup_bank_balance(forum_name)
-        user_info = find_player_from_tpe_tracker(player_name)
-
-        if user_info.get("status") == "FAILED":
-            return "Could not find player from the TPE Tracker! If the player is new, they should be added to " \
-                   "the tracker soon and all their information will be available. If the player name has " \
-                   "special characters, some may not be recognized."
-
-        return f"""```
-{player_name}
+    return f"""```
+{user_info["player_name"]}
 ---------------
-Regression Season: {user_info["regression_season"]}
+Regression Season: {user_info["season"]}
 Team: {user_info["team"]}
-Position: {user_info["pos"]}
+Position: {user_info["position"]}
 TPE: {user_info["tpe"]}
-Forum Name: {forum_name}
-Last Seen: {user_info["last_seen"]}
+Forum Name: {user_info["forum_name"]}
+Last Seen: {last_seen}
 Last Updated: {user_info["last_updated"]}
 Balance: {balance}
-{get_tasks(forum_name)}
-```"""
-
-    else:
-        forum_name = user_info['forum_name']
-        player_name = handle_special_characters(find_player_from_bank(forum_name))
-        discord = user_info['discord']
-        balance = lookup_bank_balance(forum_name)
-        user_info = find_player_from_tpe_tracker(player_name)
-
-        return f"""```
-{player_name}
----------------
-Regression Season: {user_info["regression_season"]}
-Team: {user_info["team"]}
-Position: {user_info["pos"]}
-TPE: {user_info["tpe"]}
-Forum Name: {forum_name}
-Last Seen: {user_info["last_seen"]}
-Last Updated: {user_info["last_updated"]}
-Balance: {balance}
-Discord: {discord}
-{get_tasks(forum_name)}
+{get_tasks(user_info["forum_name"])}
 ```"""
 
 
@@ -647,7 +593,12 @@ def get_topic_num_from_url(url):
 
 
 def get_normalized_name(name):
-    return unidecode(name)
+    finalized_name = ""
+    for s in name:
+        if s.isalnum() or s == ' ':
+            finalized_name = finalized_name + s
+
+    return unidecode(finalized_name)
 
 
 def handle_special_characters_ignore_case(name):
