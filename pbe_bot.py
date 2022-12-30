@@ -206,7 +206,7 @@ def get_active_player_by_forum_name(name):
 
     player = None
     for p in players:
-        if p.get("team") != "Retired":
+        if p.get("team") != "Retired" and p.get("forum_name").lower() == name.lower():
             player = p
 
     return player
