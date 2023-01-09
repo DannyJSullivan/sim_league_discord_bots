@@ -56,7 +56,7 @@ async def bank(ctx):
         balance = lookup_bank_balance(forum_name)
 
         if balance is not None:
-            await ctx.send(forum_name + ": " + balance)
+            await ctx.send(forum_name + "'s bank balance: " + balance)
             return
 
         await ctx.send("Could not find balance for: " + str(ctx.message.author))
@@ -65,7 +65,7 @@ async def bank(ctx):
         balance = lookup_bank_balance(forum_name)
 
         if balance is not None:
-            await ctx.send(forum_name + ": " + balance)
+            await ctx.send(forum_name + "'s bank balance: " + balance)
             return
 
         await ctx.send("Could not find balance for: " + forum_name)
@@ -96,7 +96,7 @@ async def transactions(ctx):
 
 
 @bot.command(name='m', help='Get your 10 most recent media transactions')
-async def transactions(ctx):
+async def media_transactions(ctx):
     if command_has_no_argument(ctx, "m"):
         forum_name = lookup_forum_name(str(ctx.message.author))
         t = format_most_recent_transactions(lookup_media_transactions(forum_name), forum_name, False)
@@ -118,7 +118,7 @@ async def transactions(ctx):
 
 
 @bot.command(name='g', help='Get your 10 most recent graphic transactions')
-async def transactions(ctx):
+async def graphic_transactions(ctx):
     if command_has_no_argument(ctx, "g"):
         forum_name = lookup_forum_name(str(ctx.message.author))
         t = format_most_recent_transactions(lookup_graphic_transactions(forum_name), forum_name, False)
@@ -140,7 +140,7 @@ async def transactions(ctx):
 
 
 @bot.command(name='v', help='Get your 10 most recent video transactions')
-async def transactions(ctx):
+async def video_transactions(ctx):
     if command_has_no_argument(ctx, "v"):
         forum_name = lookup_forum_name(str(ctx.message.author))
         t = format_most_recent_transactions(lookup_video_transactions(forum_name), forum_name, False)
@@ -161,6 +161,50 @@ async def transactions(ctx):
         await ctx.send("Could not find transactions for: " + forum_name)
 
 
+@bot.command(name='s', help='Get your total stock value')
+async def stock(ctx):
+    if command_has_no_argument(ctx, "s"):
+        forum_name = lookup_forum_name(str(ctx.message.author))
+        balance = lookup_stock_balance(forum_name)
+
+        if balance is not None:
+            await ctx.send(forum_name + "'s stock balance: " + balance)
+            return
+
+        await ctx.send("Could not find stocks for: " + str(ctx.message.author))
+    else:
+        forum_name = str(ctx.message.content).replace("$s", "").strip()
+        balance = lookup_stock_balance(forum_name)
+
+        if balance is not None:
+            await ctx.send(forum_name + "'s stock balance: " + balance)
+            return
+
+        await ctx.send("Could not find stocks for: " + forum_name)
+
+
+@bot.command(name='net', help='Get your net worth')
+async def net_worth(ctx):
+    if command_has_no_argument(ctx, "net"):
+        forum_name = lookup_forum_name(str(ctx.message.author))
+        balance = get_net_worth(forum_name)
+
+        if balance is not None:
+            await ctx.send(forum_name + "'s net worth: " + balance)
+            return
+
+        await ctx.send("Could not find net worth for: " + str(ctx.message.author))
+    else:
+        forum_name = str(ctx.message.content).replace("$net", "").strip()
+        balance = get_net_worth(forum_name)
+
+        if balance is not None:
+            await ctx.send(forum_name + "'s net worth: " + balance)
+            return
+
+        await ctx.send("Could not find stocks for: " + forum_name)
+
+
 def lookup_bank_balance(forum_name):
     bank_sheet_id = "15OMqbS-8cA21JFdettLs6A0K4A1l4Vjls7031uAFAkc"
     bank_sheet_range = 'Shorrax Import Player Pool!A:H'
@@ -179,7 +223,40 @@ def lookup_bank_balance(forum_name):
         if row[1].lower() == forum_name.lower():
             return row[4]
 
-    return None
+    return "$0"
+
+
+def lookup_stock_balance(forum_name):
+    bank_sheet_id = "1uu3TjEsNEhw4FZCNhXbLsMg-pwLFaW7YSlDNsxqoPTQ"
+    bank_sheet_range = 'User SUMMARY!A:K'
+
+    key = json.loads(os.environ.get("GCP_KEY"))
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(key)
+
+    service = build('sheets', 'v4', credentials=credentials)
+
+    sheet = service.spreadsheets()
+    result = sheet.values().get(spreadsheetId=bank_sheet_id,
+                                range=bank_sheet_range).execute()
+    values = result.get('values', [])
+
+    for row in values:
+        if row[0].lower() == forum_name.lower():
+            return row[1]
+
+    return "$0"
+
+
+def get_net_worth(forum_name):
+    bank_balance = lookup_bank_balance(forum_name)
+    stock_balance = lookup_stock_balance(forum_name)
+
+    balance = 0
+
+    balance = balance + int(bank_balance.replace(",", "").replace("$", ""))
+    balance = balance + int(stock_balance.replace(",", "").replace("$", ""))
+
+    return "${:0,.0f}".format(balance)
 
 
 def lookup_forum_name(discord_name):
