@@ -456,7 +456,7 @@ def scrape_pbe_player(url):
                         player.update({'player_name': name})
                         player.update({'normalized_name': get_normalized_name(name)})
 
-                    elif "Name:" in x:
+                    elif "Name:" in x and "Username:" not in x:
                         player.update({'player_name': value})
                         player.update({'normalized_name': get_normalized_name(value)})
 
