@@ -56,12 +56,23 @@ client = discord.Client()
 
 @tasks.loop(minutes=10.0, count=None)
 async def update_sim_league_stuff():
+
+    # FOR DEBUGGING PLAYER PAGES
+    # player_results = []
+    # p = scrape_pbe_player("https://probaseballexperience.jcink.net/index.php?showtopic=30366")
+    # if p is not None:
+    #     player_results.append(p)
+    #
+    # print("saving players...")
+    # save_players(player_results)
+
+    # TODO: uncomment this...
     channel_id = os.getenv("STATUS_CHANNEL_ID")
     channel = client.get_channel(id=int(channel_id))
 
     await channel.send("Updating sim league info...")
 
-    # TODO: uncomment this...
+
     print("retrieving pbe tasks...")
     get_pbe_tasks()
     print("done getting tasks!")
@@ -74,12 +85,12 @@ async def update_sim_league_stuff():
     scrape_bank()
     print("done scraping bank!")
 
+    await channel.send("Updated!")
+
     # TODO: see if this needs to be added again...
     # sleep for 5 mins (300 secs)
     # time.sleep(300)
     # print("done sleeping. should be restarting!")
-
-    await channel.send("Updated!")
 
 
 @client.event
@@ -466,7 +477,7 @@ def scrape_pbe_player(url):
                         else:
                             player.update({'number': 0})
 
-                    elif "Position:" in x:
+                    elif "Position" in x:
                         player.update({'position': value})
 
                     elif "College:" in x:
