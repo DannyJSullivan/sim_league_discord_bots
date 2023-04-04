@@ -439,7 +439,7 @@ def scrape_pbe_player(url):
                     else:
                         value = attrs[counter].strip()
                     split_size = len(x.split(":"))
-                    value2 = x.split(":")[split_size - 1].strip()
+                    value2 = x.split(":")[split_size - 1].replace('(MAX)', '').replace('[MAX]', '').strip()
 
                     # if "Username:" in x:
                     #     player.update({'forum_name': value})
