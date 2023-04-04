@@ -59,10 +59,10 @@ async def update_sim_league_stuff():
 
     # FOR DEBUGGING PLAYER PAGES
     # player_results = []
-    # p = scrape_pbe_player("https://probaseballexperience.jcink.net/index.php?showtopic=30366")
+    # p = scrape_pbe_player("https://probaseballexperience.jcink.net/index.php?showtopic=25044")
     # if p is not None:
     #     player_results.append(p)
-    #
+    # 
     # print("saving players...")
     # save_players(player_results)
 
@@ -477,7 +477,7 @@ def scrape_pbe_player(url):
                         else:
                             player.update({'number': 0})
 
-                    elif "Position" in x:
+                    elif "Position:" in x or "Position(C" in x or "Position (C" in x:
                         player.update({'position': value})
 
                     elif "College:" in x:
