@@ -72,11 +72,11 @@ async def update_sim_league_stuff():
 
     await channel.send("Updating sim league info...")
 
-
     print("retrieving pbe tasks...")
     get_pbe_tasks()
     print("done getting tasks!")
 
+    # TODO: reduce the number of times this runs, might want to only do this one daily since it's such a big process
     print("retrieving pbe players...")
     get_pbe_players()
     print("done getting players!")
